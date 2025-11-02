@@ -3,17 +3,43 @@ const orderModel = require("../models/orders");
 class Order {
   async getAllOrders(req, res) {
     try {
-      let Orders = await orderModel
-        .find({})
+      const page = Math.max(parseInt(req.query.page) || 1, 1);
+      const limit = Math.min(parseInt(req.query.limit) || 10, 100);
+      const q = (req.query.q || '').trim();
+
+      let filter = {};
+      if (q) {
+        try {
+          const customerModel = require("../models/customers");
+          const customers = await customerModel
+            .find({ fullName: { $regex: q, $options: 'i' } })
+            .select('_id');
+          const ids = customers.map((c) => c._id);
+          filter = {
+            $or: [
+              { transactionId: { $regex: q, $options: 'i' } },
+              { customer: { $in: ids } },
+            ],
+          };
+        } catch (e) {
+          filter = { transactionId: { $regex: q, $options: 'i' } };
+        }
+      }
+
+      const total = await orderModel.countDocuments(filter);
+      const Orders = await orderModel
+        .find(filter)
         .populate("allProduct.id", "pName pImages pPrice")
         .populate("user", "name email")
         .populate("customer")
-        .sort({ _id: -1 });
-      if (Orders) {
-        return res.json({ Orders });
-      }
+        .sort({ _id: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit);
+
+      return res.json({ Orders, total, page, limit });
     } catch (err) {
       console.log(err);
+      return res.status(500).json({ error: "Internal server error" });
     }
   }
 
@@ -102,7 +128,7 @@ class Order {
           return res.json({ success: "Order created successfully" });
         }
       } catch (err) {
-        return res.json({ error: error });
+        return res.json({ error: err?.message || "Failed to create order" });
       }
     }
   }
@@ -112,14 +138,27 @@ class Order {
     if (!oId || !status) {
       return res.json({ message: "All filled must be required" });
     } else {
-      let currentOrder = orderModel.findByIdAndUpdate(oId, {
-        status: status,
-        updatedAt: Date.now(),
-      });
-      currentOrder.exec((err, result) => {
-        if (err) console.log(err);
-        return res.json({ success: "Order updated successfully" });
-      });
+      try {
+        // Check if order is already delivered (cannot update)
+        const order = await orderModel.findById(oId);
+        if (!order) {
+          return res.status(404).json({ error: "Order not found" });
+        }
+        if (order.status === "Delivered") {
+          return res.status(400).json({ error: "Không thể cập nhật trạng thái đơn hàng đã giao" });
+        }
+
+        let currentOrder = orderModel.findByIdAndUpdate(oId, {
+          status: status,
+          updatedAt: Date.now(),
+        });
+        currentOrder.exec((err, result) => {
+          if (err) console.log(err);
+          return res.json({ success: "Order updated successfully" });
+        });
+      } catch (err) {
+        return res.status(500).json({ error: "Internal server error" });
+      }
     }
   }
 

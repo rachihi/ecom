@@ -92,7 +92,9 @@ const purchaseOrdersController = require("../controller/purchaseOrders");
 router.get("/", purchaseOrdersController.list);
 router.get("/:id", purchaseOrdersController.getById);
 router.post("/", purchaseOrdersController.create);
-router.put("/:id/status", purchaseOrdersController.updateStatus);
+router.put("/:id", purchaseOrdersController.update);
+
+router.put("/:id/receive", purchaseOrdersController.markReceived);
 router.delete("/:id", purchaseOrdersController.remove);
 
 module.exports = router;

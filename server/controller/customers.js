@@ -3,10 +3,33 @@ const customerModel = require("../models/customers");
 class CustomersController {
   async list(req, res) {
     try {
-      const customers = await customerModel.find({}).populate("user", "name email").sort({ _id: -1 });
-      return res.json({ customers });
+      const page = Math.max(parseInt(req.query.page) || 1, 1);
+      const limit = Math.min(parseInt(req.query.limit) || 10, 100);
+      const q = (req.query.q || '').trim();
+
+      const filter = q
+        ? {
+            $or: [
+              { fullName: { $regex: q, $options: 'i' } },
+              { phoneNumber: { $regex: q, $options: 'i' } },
+              { email: { $regex: q, $options: 'i' } },
+              { address: { $regex: q, $options: 'i' } },
+              { taxCode: { $regex: q, $options: 'i' } }
+            ]
+          }
+        : {};
+
+      const total = await customerModel.countDocuments(filter);
+      const customers = await customerModel
+        .find(filter)
+        .populate('user', 'name email')
+        .sort({ _id: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit);
+
+      return res.json({ customers, total, page, limit });
     } catch (err) {
-      return res.status(500).json({ error: "Internal server error" });
+      return res.status(500).json({ error: 'Internal server error' });
     }
   }
 

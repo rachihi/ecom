@@ -117,8 +117,9 @@ class Auth {
       } else {
         const login = await bcrypt.compare(password, data.password);
         if (login) {
+          // Add exp (7 days from now)
           const token = jwt.sign(
-            { _id: data._id, role: data.userRole },
+            { _id: data._id, role: data.userRole, exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) },
             JWT_SECRET
           );
           const encode = jwt.verify(token, JWT_SECRET);
@@ -134,6 +135,32 @@ class Auth {
       }
     } catch (err) {
       console.log(err);
+    }
+  }
+
+  /* Get User Profile */
+  async getUserProfile(req, res) {
+    try {
+      const userId = req.userDetails._id;
+      const user = await userModel.findById(userId).select('name email phoneNumber userRole userImage createdAt updatedAt');
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      return res.json({
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+          role: user.userRole,
+          userImage: user.userImage,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt
+        }
+      });
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({ error: "Internal server error" });
     }
   }
 }

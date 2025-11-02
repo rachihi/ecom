@@ -1,4 +1,5 @@
 const productModel = require("../models/products");
+const warehouseModel = require("../models/warehouses");
 const fs = require("fs");
 const path = require("path");
 
@@ -29,22 +30,29 @@ class Product {
 
   async getAllProduct(req, res) {
     try {
-      let Products = await productModel
-        .find({})
+      const page = Math.max(parseInt(req.query.page) || 1, 1);
+      const limit = Math.min(parseInt(req.query.limit) || 10, 100);
+      const q = (req.query.q || '').trim();
+      const filter = q ? { pName: { $regex: q, $options: 'i' } } : {};
+
+      const total = await productModel.countDocuments(filter);
+      const Products = await productModel
+        .find(filter)
         .populate("pCategory", "_id cName")
-        .sort({ _id: -1 });
-      if (Products) {
-        return res.json({ Products });
-      }
+        .sort({ _id: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit);
+
+      return res.json({ Products, total, page, limit });
     } catch (err) {
       console.log(err);
+      return res.status(500).json({ error: "Internal server error" });
     }
   }
 
   async postAddProduct(req, res) {
-    let { pName, pDescription, pPrice, pQuantity, pCategory, pOffer, pStatus } =
-      req.body;
-    let images = req.files;
+    let { pName, pDescription, pPrice, pQuantity, pCategory, pOffer, pStatus } = req.body;
+    let images = req.files || [];
     // Validation
     if (
       !pName |
@@ -55,20 +63,15 @@ class Product {
       !pOffer |
       !pStatus
     ) {
-      Product.deleteImages(images, "file");
+      if (images.length) Product.deleteImages(images, "file");
       return res.json({ error: "All filled must be required" });
     }
     // Validate Name and description
     else if (pName.length > 255 || pDescription.length > 3000) {
-      Product.deleteImages(images, "file");
+      if (images.length) Product.deleteImages(images, "file");
       return res.json({
         error: "Name 255 & Description must not be 3000 charecter long",
       });
-    }
-    // Validate Images
-    else if (images.length !== 2) {
-      Product.deleteImages(images, "file");
-      return res.json({ error: "Must need to provide 2 images" });
     } else {
       try {
         let allImages = [];
@@ -91,6 +94,7 @@ class Product {
         }
       } catch (err) {
         console.log(err);
+        return res.status(500).json({ error: "Internal server error" });
       }
     }
   }
@@ -107,9 +111,9 @@ class Product {
       pStatus,
       pImages,
     } = req.body;
-    let editImages = req.files;
+    let editImages = req.files || [];
 
-    // Validate other fileds
+    // Validate other fields
     if (
       !pId |
       !pName |
@@ -127,11 +131,6 @@ class Product {
       return res.json({
         error: "Name 255 & Description must not be 3000 charecter long",
       });
-    }
-    // Validate Update Images
-    else if (editImages && editImages.length == 1) {
-      Product.deleteImages(editImages, "file");
-      return res.json({ error: "Must need to provide 2 images" });
     } else {
       let editData = {
         pName,
@@ -142,13 +141,13 @@ class Product {
         pOffer,
         pStatus,
       };
-      if (editImages.length == 2) {
+      if (editImages && editImages.length > 0) {
         let allEditImages = [];
         for (const img of editImages) {
           allEditImages.push(img.filename);
         }
         editData = { ...editData, pImages: allEditImages };
-        Product.deleteImages(pImages.split(","), "string");
+        if (pImages) Product.deleteImages(pImages.split(","), "string");
       }
       try {
         let editProduct = productModel.findByIdAndUpdate(pId, editData);
@@ -173,6 +172,10 @@ class Product {
         if (deleteProduct) {
           // Delete Image from uploads -> products folder
           Product.deleteImages(deleteProductObj.pImages, "string");
+
+          // Delete warehouse entry for this product
+          await warehouseModel.deleteOne({ product: pId });
+
           return res.json({ success: "Product deleted successfully" });
         }
       } catch (err) {

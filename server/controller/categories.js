@@ -5,21 +5,31 @@ const fs = require("fs");
 class Category {
   async getAllCategory(req, res) {
     try {
-      let Categories = await categoryModel.find({}).sort({ _id: -1 });
-      if (Categories) {
-        return res.json({ Categories });
-      }
+      const page = Math.max(parseInt(req.query.page) || 1, 1);
+      const limit = Math.min(parseInt(req.query.limit) || 10, 100);
+      const q = (req.query.q || '').trim();
+      const filter = q ? { cName: { $regex: q, $options: 'i' } } : {};
+
+      const total = await categoryModel.countDocuments(filter);
+      const Categories = await categoryModel
+        .find(filter)
+        .sort({ _id: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit);
+
+      return res.json({ Categories, total, page, limit });
     } catch (err) {
       console.log(err);
+      return res.status(500).json({ error: 'Internal server error' });
     }
   }
 
   async postAddCategory(req, res) {
     let { cName, cDescription, cStatus } = req.body;
-    let cImage = req.file.filename;
+    let cImage = req.file?.filename;
     const filePath = `../server/public/uploads/categories/${cImage}`;
 
-    if (!cName || !cDescription || !cStatus || !cImage) {
+    if (!cName || !cDescription || !cStatus) {
       fs.unlink(filePath, (err) => {
         if (err) {
           console.log(err);

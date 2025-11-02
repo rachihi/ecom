@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Server (Nodemon)",
+      "runtimeExecutable": "${workspaceFolder}/server/node_modules/.bin/nodemon",
+      "program": "${workspaceFolder}/server/app.js",
+      "restart": true,
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "cwd": "${workspaceFolder}/server",
+      "env": {
+        "NODE_ENV": "development"
+      }
+    }
+  ]
+}

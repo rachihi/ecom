@@ -3,10 +3,32 @@ const supplierModel = require("../models/suppliers");
 class SuppliersController {
   async list(req, res) {
     try {
-      const suppliers = await supplierModel.find({}).sort({ _id: -1 });
-      return res.json({ suppliers });
+      const page = Math.max(parseInt(req.query.page) || 1, 1);
+      const limit = Math.min(parseInt(req.query.limit) || 10, 100);
+      const q = (req.query.q || '').trim();
+
+      const filter = q
+        ? {
+            $or: [
+              { name: { $regex: q, $options: 'i' } },
+              { phone: { $regex: q, $options: 'i' } },
+              { email: { $regex: q, $options: 'i' } },
+              { address: { $regex: q, $options: 'i' } },
+              { taxCode: { $regex: q, $options: 'i' } }
+            ]
+          }
+        : {};
+
+      const total = await supplierModel.countDocuments(filter);
+      const suppliers = await supplierModel
+        .find(filter)
+        .sort({ _id: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit);
+
+      return res.json({ suppliers, total, page, limit });
     } catch (err) {
-      return res.status(500).json({ error: "Internal server error" });
+      return res.status(500).json({ error: 'Internal server error' });
     }
   }
 

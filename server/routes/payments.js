@@ -6,7 +6,7 @@ const paymentsController = require("../controller/payments");
  * @swagger
  * tags:
  *   name: Payments
- *   description: Payments for orders
+ *   description: Payments for orders and purchase orders
  */
 
 /**
@@ -24,9 +24,22 @@ const paymentsController = require("../controller/payments");
  *     responses:
  *       200:
  *         description: Payment list and summary
+ * /api/payments/purchase-order/{purchaseOrderId}:
+ *   get:
+ *     summary: List payments by purchase order
+ *     tags: [Payments]
+ *     parameters:
+ *       - in: path
+ *         name: purchaseOrderId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Payment list and summary
  * /api/payments/:
  *   post:
- *     summary: Create payment
+ *     summary: Create payment (order income or purchase payout)
  *     tags: [Payments]
  *     requestBody:
  *       required: true
@@ -36,6 +49,7 @@ const paymentsController = require("../controller/payments");
  *             type: object
  *             properties:
  *               order: { type: string }
+ *               purchaseOrder: { type: string }
  *               paymentMethod: { type: string }
  *               amount: { type: number }
  *               paymentDate: { type: string, format: date-time }
@@ -45,7 +59,10 @@ const paymentsController = require("../controller/payments");
  *         description: Created
  */
 router.get("/order/:orderId", paymentsController.listByOrder);
+router.get("/purchase-order/:purchaseOrderId", paymentsController.listByPurchaseOrder);
 router.post("/", paymentsController.create);
+router.put("/:id", paymentsController.update);
+router.delete("/:id", paymentsController.remove);
 
 module.exports = router;
 
