@@ -15,32 +15,15 @@ const useRecommendedProducts = (itemsCount = 6) => {
 
       // Call API to get recommended products
       const response = await productAPI.getRecommendedProducts(itemsCount);
-      const { products = [] } = response.data;
-
+      const { products = [] } = response.data;      
       if (products.length === 0) {
         if (didMount) {
           setError('No recommended products found.');
           setLoading(false);
         }
       } else {
-        // Transform API response to match expected format
-        const items = products.map(p => ({
-          id: p._id,
-          name: p.pName,
-          description: p.pDescription,
-          price: p.pPrice,
-          quantity: p.pQuantity,
-          category: p.pCategory,
-          images: p.pImages || [],
-          image: p.pImages && p.pImages.length > 0 ? p.pImages[0] : '',
-          imageCollection: p.pImages || [],
-          isFeatured: false,
-          isRecommended: true,
-          availableColors: [],
-          maxQuantity: p.pQuantity,
-          dateAdded: p.createdAt || Date.now(),
-        }));
-
+        // Transform API response using productAPI.transformProduct
+        const items = products.map(productAPI.transformProduct);
         if (didMount) {
           setRecommendedProducts(items);
           setLoading(false);

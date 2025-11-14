@@ -23,24 +23,8 @@ const useFeaturedProducts = (itemsCount = 6) => {
           setLoading(false);
         }
       } else {
-        // Transform API response to match expected format
-        const items = products.map(p => ({
-          id: p._id,
-          name: p.pName,
-          description: p.pDescription,
-          price: p.pPrice,
-          quantity: p.pQuantity,
-          category: p.pCategory,
-          images: p.pImages || [],
-          image: p.pImages && p.pImages.length > 0 ? p.pImages[0] : '',
-          imageCollection: p.pImages || [],
-          isFeatured: true,
-          isRecommended: false,
-          availableColors: [],
-          maxQuantity: p.pQuantity,
-          dateAdded: p.createdAt || Date.now(),
-        }));
-
+        // Transform API response using productAPI.transformProduct
+        const items = products.map(productAPI.transformProduct);
         if (didMount) {
           setFeaturedProducts(items);
           setLoading(false);

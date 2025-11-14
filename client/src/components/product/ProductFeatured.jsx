@@ -19,7 +19,7 @@ const ProductFeatured = ({ product }) => {
           {product.image ? (
             <ImageLoader
               className="product-card-img"
-              src={product.image}
+              src={product.images[0]}
             />
           ) : <Skeleton width="100%" height="100%" />}
         </div>

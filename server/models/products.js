@@ -42,10 +42,25 @@ const furnitureProductSchema = new mongoose.Schema(
       // Mô tả ngắn cho danh sách
     },
 
+
+      // ===========================
+      // ẢNH SẢN PHẨM (LƯU MẢNG STRING FILENAME)
+      images: [
+        {
+          type: String,
+          // filename or base64 string
+        }
+      ],
     // ===========================
     // GIÁ VÀ KHUYẾN MÃI
     // ===========================
     pPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+      index: true,
+    },
+    pCost: {
       type: Number,
       required: true,
       min: 0,
@@ -153,54 +168,17 @@ const furnitureProductSchema = new mongoose.Schema(
         unit: String,
       },
 
-      // Bảo hành
-      warranty: {
-        duration: {
-          type: Number,
-          default: 12,         // Tháng
-        },
-        type: String,          // "Toàn bộ", "Khung", "Bề mặt"
-        description: String,
-      },
-
       // Hướng dẫn chăm sóc
       care: [String],
-
-      // Thông tin lắp ráp
-      assembly: {
-        required: Boolean,
-        time: String,          // "15-30 phút", "1-2 giờ"
-      },
-
-      // Nguồn gốc
-      origin: String,
     },
 
     // ===========================
     // HÌNH ẢNH
     // ===========================
-    images: [
-      {
-        filename: String,
-        filepath: String,
-        originalName: String,
-        type: {
-          type: String,
-          enum: ["main", "detail", "color", "usage", "dimensions", "360"],
-          default: "detail",
-        },
-        alt: String,
-        uploadedAt: {
-          type: Date,
-          default: Date.now,
-        },
-        size: Number,
-        public_id: String,
-      },
-    ],
-    pImages: [String],         // Array filenames for compatibility
-    thumbnailImage: String,
-
+      // ===========================
+      // HÌNH ẢNH (DEPRECATED FIELDS)
+      pImages: [String],         // Array filenames for compatibility
+      thumbnailImage: String,
     // ===========================
     // TÌNH TRẠNG & TỒN KHO
     // ===========================

@@ -8,94 +8,6 @@ const fs = require("fs");
 const path = require("path");
 
 class Product {
-  // ===========================
-  // HÌNH ẢNH - UPLOAD & DELETE
-  // ===========================
-
-  static async uploadProductImages(req, res) {
-    try {
-      const { productId } = req.body;
-      const files = req.files || [];
-
-      if (!files.length) {
-        return res.status(400).json({ error: "No images uploaded" });
-      }
-
-      const uploadedImages = [];
-
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const imageType =
-          req.body.imageTypes && req.body.imageTypes[i] 
-            ? req.body.imageTypes[i] 
-            : "detail";
-
-        const metadata = {
-          productId: productId || null,
-          filename: file.filename,
-          filepath: `/uploads/products/${file.filename}`,
-          originalName: file.originalname,
-          type: imageType,
-          size: file.size,
-          uploadedAt: new Date(),
-          alt: `Product image - ${imageType}`,
-        };
-
-        const metadataPath = path.join(
-          __dirname,
-          `../public/uploads/products/${file.filename}.json`
-        );
-        try {
-          fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
-        } catch (err) {
-          console.warn("Could not write metadata file:", err);
-        }
-
-        uploadedImages.push({
-          filename: file.filename,
-          filepath: metadata.filepath,
-          type: imageType,
-          alt: metadata.alt,
-          size: file.size,
-        });
-      }
-
-      return res.json({
-        success: "Images uploaded successfully",
-        data: { images: uploadedImages },
-      });
-    } catch (err) {
-      console.error("Upload error:", err);
-      return res.status(500).json({ error: "Internal server error" });
-    }
-  }
-
-  static deleteImages(images, mode) {
-    const basePath = path.resolve(__dirname + "../../") + "/public/uploads/products/";
-
-    for (let i = 0; i < images.length; i++) {
-      let filePath = "";
-
-      if (mode === "file") {
-        filePath = basePath + `${images[i].filename}`;
-      } else {
-        filePath = basePath + `${images[i]}`;
-      }
-
-      if (fs.existsSync(filePath)) {
-        fs.unlink(filePath, (err) => {
-          if (err) console.error("Error deleting file:", err);
-        });
-      }
-
-      const metadataPath = filePath + ".json";
-      if (fs.existsSync(metadataPath)) {
-        fs.unlink(metadataPath, (err) => {
-          if (err) console.error("Error deleting metadata:", err);
-        });
-      }
-    }
-  }
 
   // ===========================
   // CRUD OPERATIONS
@@ -161,12 +73,17 @@ class Product {
       }
 
       const total = await productModel.countDocuments(filter);
-      const products = await productModel
+      const productsRaw = await productModel
         .find(filter)
         .populate("pCategory", "_id cName")
         .sort(sortOption)
         .skip((page - 1) * limit)
         .limit(limit);
+
+      // Keep images as stored (base64 array or filenames)
+      const products = productsRaw.map((p) => ({
+        ...p.toObject()
+      }));
 
       return res.json({
         success: true,
@@ -228,33 +145,51 @@ class Product {
         furniture,
       } = req.body;
 
-      const files = req.files || [];
 
       if (!pName || !pDescription || !pPrice || !pQuantity || !pCategory || !pStatus) {
-        if (files.length) Product.deleteImages(files, "file");
         return res.json({ error: "All required fields must be filled" });
       }
 
-      if (!files.length) {
-        return res.json({ error: "At least one product image is required" });
-      }
 
-      const images = files.map((file, index) => ({
-        filename: file.filename,
-        filepath: `/uploads/products/${file.filename}`,
-        originalName: file.originalname,
-        type: "main",
-        alt: pName,
-        uploadedAt: new Date(),
-        size: file.size,
-      }));
+      let images = req.body.image
 
-      const thumbnailImage = images[0].filename;
+      const thumbnailImage = req.body.images.length > 0 ? req.body.images[0] : undefined;
+
 
       let furnitureData = {};
       if (furniture) {
         try {
           furnitureData = typeof furniture === "string" ? JSON.parse(furniture) : furniture;
+          // Ensure colors is array of objects { colorName }
+          if (furnitureData.colors) {
+            if (typeof furnitureData.colors === 'string') {
+              // Split string to array
+              furnitureData.colors = furnitureData.colors.split(',').map(c => c.trim()).filter(c => c).map(c => ({ colorName: c }));
+            } else if (Array.isArray(furnitureData.colors)) {
+              // If array of strings, convert to array of objects
+              furnitureData.colors = furnitureData.colors.map(c => {
+                if (typeof c === 'string') return { colorName: c };
+                if (typeof c === 'object' && c.colorName) return c;
+                return null;
+              }).filter(Boolean);
+            } else {
+              furnitureData.colors = [];
+            }
+          }
+          if (furnitureData.style && !Array.isArray(furnitureData.style)) {
+            if (typeof furnitureData.style === 'string') {
+              furnitureData.style = furnitureData.style.split(',').map(s => s.trim()).filter(s => s);
+            } else {
+              furnitureData.style = [];
+            }
+          }
+          if (furnitureData.features && !Array.isArray(furnitureData.features)) {
+            if (typeof furnitureData.features === 'string') {
+              furnitureData.features = furnitureData.features.split(',').map(f => f.trim()).filter(f => f);
+            } else {
+              furnitureData.features = [];
+            }
+          }
         } catch (e) {
           console.warn("Could not parse furniture data");
         }
@@ -272,7 +207,6 @@ class Product {
         pStatus,
         pSKU,
         images,
-        pImages: images.map(img => img.filename),
         thumbnailImage,
         furniture: furnitureData,
       });
@@ -289,65 +223,102 @@ class Product {
     }
   }
 
-  static async postEditProduct(req, res) {
+  static async editProduct(req, res) {
     try {
       const {
         pId,
         pName,
         pDescription,
         pShortDescription,
+        pSKU,
         pPrice,
+        pCost,
+        pComparePrice,
         pQuantity,
         pCategory,
         discount,
         pDiscount,
+        isFeatured,
+        isRecommended,
+        isNewProduct,
+        isBestseller,
+        isOnSale,
         pStatus,
         furniture,
       } = req.body;
 
-      const editFiles = req.files || [];
-
       if (!pId) {
-        if (editFiles.length) Product.deleteImages(editFiles, "file");
         return res.json({ error: "Product ID required" });
       }
-
       if (!pName || !pDescription || !pPrice || !pQuantity || !pCategory || !pStatus) {
-        if (editFiles.length) Product.deleteImages(editFiles, "file");
         return res.json({ error: "All required fields must be filled" });
+      }
+      // Không required ảnh nữa
+
+      const existingProduct = await productModel.findById(pId);
+
+      if (!existingProduct) {
+        return res.status(404).json({ error: "Product not found" });
       }
 
       const updateData = {
         pName,
         pDescription,
         pShortDescription,
+        pSKU,
         pPrice,
         pQuantity,
-        pCategory,
+        pCost,
+        pComparePrice,
+        isFeatured,
+        isRecommended,
+        isNewProduct,
+        isBestseller,
+        isOnSale,
         discount: discount || pDiscount || 0,
         pDiscount: discount || pDiscount || 0,
         pStatus,
       };
 
-      if (editFiles.length > 0) {
-        const newImages = editFiles.map((file, index) => ({
-          filename: file.filename,
-          filepath: `/uploads/products/${file.filename}`,
-          originalName: file.originalname,
-          type: "main",
-          alt: pName,
-          uploadedAt: new Date(),
-          size: file.size,
-        }));
+      const thumbnailImage = req.body.images.length > 0 ? req.body.images[0] : undefined;
 
-        updateData.images = newImages;
-        updateData.pImages = newImages.map(img => img.filename);
-        updateData.thumbnailImage = newImages[0].filename;
-      }
-
+      // Cập nhật dữ liệu
+      updateData.thumbnailImage = thumbnailImage;
+      updateData.images = req.body.images;
       if (furniture) {
         try {
-          updateData.furniture = typeof furniture === "string" ? JSON.parse(furniture) : furniture;
+          let furnitureData = typeof furniture === "string" ? JSON.parse(furniture) : furniture;
+          // Ensure colors is array of objects { colorName }
+          if (furnitureData.colors) {
+            if (typeof furnitureData.colors === 'string') {
+              furnitureData.colors = furnitureData.colors.split(',').map(c => c.trim()).filter(c => c).map(c => ({ colorName: c }));
+            } else if (Array.isArray(furnitureData.colors)) {
+              furnitureData.colors = furnitureData.colors.map(c => {
+                if (typeof c === 'string') return { colorName: c };
+                if (typeof c === 'object' && c.colorName) return c;
+                return null;
+              }).filter(Boolean);
+            } else {
+              furnitureData.colors = [];
+            }
+          }
+          // Ensure style is array of strings
+          if (furnitureData.style && !Array.isArray(furnitureData.style)) {
+            if (typeof furnitureData.style === 'string') {
+              furnitureData.style = furnitureData.style.split(',').map(s => s.trim()).filter(s => s);
+            } else {
+              furnitureData.style = [];
+            }
+          }
+          // Ensure features is array of strings
+          if (furnitureData.features && !Array.isArray(furnitureData.features)) {
+            if (typeof furnitureData.features === 'string') {
+              furnitureData.features = furnitureData.features.split(',').map(f => f.trim()).filter(f => f);
+            } else {
+              furnitureData.features = [];
+            }
+          }
+          updateData.furniture = furnitureData;
         } catch (e) {
           console.warn("Could not parse furniture data");
         }
@@ -388,8 +359,11 @@ class Product {
       }
 
       if (product.images && product.images.length) {
-        const imageFilenames = product.images.map((img) => img.filename);
-        Product.deleteImages(imageFilenames, "string");
+        const first = product.images[0];
+        const isBase64 = typeof first === "string" && first.length > 100 && /^[A-Za-z0-9+/=]+$/.test(first);
+        if (!isBase64) {
+          Product.deleteImages(product.images, "string");
+        }
       }
 
       await productModel.findByIdAndDelete(pId);
@@ -403,6 +377,7 @@ class Product {
 
   // ===========================
   // FILTERING & SEARCH
+                // images = images.map(img => `${SERVER_URL}/uploads/products/${img}`);
   // ===========================
 
   static async getProductByCategory(req, res) {

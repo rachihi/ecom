@@ -23,23 +23,8 @@ const useProduct = (id) => {
           const data = response.data.data;
           
           if (data && data._id) {
-            // Transform API response to match expected format
-            const transformedProduct = {
-              id: data._id,
-              name: data.pName,
-              description: data.pDescription,
-              price: data.pPrice,
-              quantity: data.pQuantity,
-              category: data.pCategory,
-              images: data.pImages || [],
-              image: data.pImages && data.pImages.length > 0 ? data.pImages[0] : '',
-              imageCollection: data.pImages || [],
-              isFeatured: false,
-              isRecommended: false,
-              availableColors: [],
-              maxQuantity: data.pQuantity,
-              dateAdded: data.createdAt || Date.now(),
-            };            
+            // Transform API response using productAPI.transformProduct
+            const transformedProduct = productAPI.transformProduct(data);
             if (didMount) {
               setProduct(transformedProduct);
               setLoading(false);

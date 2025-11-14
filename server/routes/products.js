@@ -126,17 +126,13 @@ router.post(
   "/add-product",
   auth.loginCheck,
   auth.isAdmin,
-  upload.any(),
-  uploadErrorHandler,
   (req, res) => productController.postAddProduct(req, res)
 );
 
-router.post(
-  "/edit-product",
+router.put(
+  "/edit-product/:id",
   auth.loginCheck,
   auth.isAdmin,
-  upload.any(),
-  uploadErrorHandler,
   (req, res) => productController.postEditProduct(req, res)
 );
 
@@ -154,7 +150,14 @@ router.post(
   "/delete-product",
   auth.loginCheck,
   auth.isAdmin,
-  (req, res) => productController.getDeleteProduct(req, res)
+  (req, res) => productController.deleteProduct(req, res)
+);
+
+router.post(
+  "/edit-product",
+  auth.loginCheck,
+  auth.isAdmin,
+  (req, res) => productController.editProduct(req, res)
 );
 
 // ===========================
