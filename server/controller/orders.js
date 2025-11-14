@@ -68,7 +68,6 @@ class Order {
     let { allProduct, user, amount, transactionId, address, phone, customerId, customer } = req.body;
     if (
       !allProduct ||
-      !user ||
       !amount ||
       !transactionId ||
       !address ||
@@ -76,29 +75,33 @@ class Order {
     ) {
       return res.json({ message: "All filled must be required" });
     } else {
+      // Use authenticated user if available, otherwise use guest user
+      const userId = user || (req.userDetails && req.userDetails._id) || null;
       try {
         // Resolve customer: use existing or create new on-the-fly
         let resolvedCustomerId = customerId;
         if (!resolvedCustomerId && customer) {
           const customerModel = require("../models/customers");
           const created = await new customerModel({
-            user: customer.user || null,
+            user: userId,
             fullName: customer.fullName,
             phoneNumber: customer.phoneNumber,
-            email: customer.email,
+            email: customer.email || 'guest@example.com',
             address: customer.address,
             taxCode: customer.taxCode || null,
           }).save();
           resolvedCustomerId = created && created._id;
         }
-        if (!resolvedCustomerId) {
-          return res.json({ message: "Customer is required" });
-        }
+
+        // Allow guest orders without customer
+        // if (!resolvedCustomerId) {
+        //   return res.json({ message: "Customer is required" });
+        // }
 
         let newOrder = new orderModel({
           allProduct,
-          user,
-          customer: resolvedCustomerId,
+          user: userId,
+          customer: resolvedCustomerId || null,
           amount,
           transactionId,
           address,

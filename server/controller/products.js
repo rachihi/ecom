@@ -1,354 +1,567 @@
+/**
+ * FURNITURE PRODUCT CONTROLLER
+ * Xử lý tất cả các thao tác liên quan đến sản phẩm nội thất
+ */
+
 const productModel = require("../models/products");
-const warehouseModel = require("../models/warehouses");
 const fs = require("fs");
 const path = require("path");
 
 class Product {
-  // Delete Image from uploads -> products folder
-  static deleteImages(images, mode) {
-    var basePath =
-      path.resolve(__dirname + "../../") + "/public/uploads/products/";
-    console.log(basePath);
-    for (var i = 0; i < images.length; i++) {
-      let filePath = "";
-      if (mode == "file") {
-        filePath = basePath + `${images[i].filename}`;
-      } else {
-        filePath = basePath + `${images[i]}`;
-      }
-      console.log(filePath);
-      if (fs.existsSync(filePath)) {
-        console.log("Exists image");
-      }
-      fs.unlink(filePath, (err) => {
-        if (err) {
-          return err;
-        }
-      });
-    }
-  }
+  // ===========================
+  // HÌNH ẢNH - UPLOAD & DELETE
+  // ===========================
 
-  async getAllProduct(req, res) {
+  static async uploadProductImages(req, res) {
     try {
-      const page = Math.max(parseInt(req.query.page) || 1, 1);
-      const limit = Math.min(parseInt(req.query.limit) || 10, 100);
-      const q = (req.query.q || '').trim();
-      const filter = q ? { pName: { $regex: q, $options: 'i' } } : {};
+      const { productId } = req.body;
+      const files = req.files || [];
 
-      const total = await productModel.countDocuments(filter);
-      const Products = await productModel
-        .find(filter)
-        .populate("pCategory", "_id cName")
-        .sort({ _id: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit);
+      if (!files.length) {
+        return res.status(400).json({ error: "No images uploaded" });
+      }
 
-      return res.json({ Products, total, page, limit });
+      const uploadedImages = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const imageType =
+          req.body.imageTypes && req.body.imageTypes[i] 
+            ? req.body.imageTypes[i] 
+            : "detail";
+
+        const metadata = {
+          productId: productId || null,
+          filename: file.filename,
+          filepath: `/uploads/products/${file.filename}`,
+          originalName: file.originalname,
+          type: imageType,
+          size: file.size,
+          uploadedAt: new Date(),
+          alt: `Product image - ${imageType}`,
+        };
+
+        const metadataPath = path.join(
+          __dirname,
+          `../public/uploads/products/${file.filename}.json`
+        );
+        try {
+          fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+        } catch (err) {
+          console.warn("Could not write metadata file:", err);
+        }
+
+        uploadedImages.push({
+          filename: file.filename,
+          filepath: metadata.filepath,
+          type: imageType,
+          alt: metadata.alt,
+          size: file.size,
+        });
+      }
+
+      return res.json({
+        success: "Images uploaded successfully",
+        data: { images: uploadedImages },
+      });
     } catch (err) {
-      console.log(err);
+      console.error("Upload error:", err);
       return res.status(500).json({ error: "Internal server error" });
     }
   }
 
-  async postAddProduct(req, res) {
-    let { pName, pDescription, pPrice, pQuantity, pCategory, pOffer, pStatus } = req.body;
-    let images = req.files || [];
-    // Validation
-    if (
-      !pName |
-      !pDescription |
-      !pPrice |
-      !pQuantity |
-      !pCategory |
-      !pOffer |
-      !pStatus
-    ) {
-      if (images.length) Product.deleteImages(images, "file");
-      return res.json({ error: "All filled must be required" });
-    }
-    // Validate Name and description
-    else if (pName.length > 255 || pDescription.length > 3000) {
-      if (images.length) Product.deleteImages(images, "file");
-      return res.json({
-        error: "Name 255 & Description must not be 3000 charecter long",
-      });
-    } else {
-      try {
-        let allImages = [];
-        for (const img of images) {
-          allImages.push(img.filename);
-        }
-        let newProduct = new productModel({
-          pImages: allImages,
-          pName,
-          pDescription,
-          pPrice,
-          pQuantity,
-          pCategory,
-          pOffer,
-          pStatus,
+  static deleteImages(images, mode) {
+    const basePath = path.resolve(__dirname + "../../") + "/public/uploads/products/";
+
+    for (let i = 0; i < images.length; i++) {
+      let filePath = "";
+
+      if (mode === "file") {
+        filePath = basePath + `${images[i].filename}`;
+      } else {
+        filePath = basePath + `${images[i]}`;
+      }
+
+      if (fs.existsSync(filePath)) {
+        fs.unlink(filePath, (err) => {
+          if (err) console.error("Error deleting file:", err);
         });
-        let save = await newProduct.save();
-        if (save) {
-          return res.json({ success: "Product created successfully" });
-        }
-      } catch (err) {
-        console.log(err);
-        return res.status(500).json({ error: "Internal server error" });
+      }
+
+      const metadataPath = filePath + ".json";
+      if (fs.existsSync(metadataPath)) {
+        fs.unlink(metadataPath, (err) => {
+          if (err) console.error("Error deleting metadata:", err);
+        });
       }
     }
   }
 
-  async postEditProduct(req, res) {
-    let {
-      pId,
-      pName,
-      pDescription,
-      pPrice,
-      pQuantity,
-      pCategory,
-      pOffer,
-      pStatus,
-      pImages,
-    } = req.body;
-    let editImages = req.files || [];
+  // ===========================
+  // CRUD OPERATIONS
+  // ===========================
 
-    // Validate other fields
-    if (
-      !pId |
-      !pName |
-      !pDescription |
-      !pPrice |
-      !pQuantity |
-      !pCategory |
-      !pOffer |
-      !pStatus
-    ) {
-      return res.json({ error: "All filled must be required" });
-    }
-    // Validate Name and description
-    else if (pName.length > 255 || pDescription.length > 3000) {
+  static async getAllProduct(req, res) {
+    try {
+      const page = Math.max(parseInt(req.query.page) || 1, 1);
+      const limit = Math.min(parseInt(req.query.limit) || 12, 100);
+      const search = (req.query.search || req.query.q || "").trim();
+
+      let filter = { pStatus: { $in: ["active", "Active"] } };
+
+      if (search) {
+        filter.$or = [
+          { pName: { $regex: search, $options: "i" } },
+          { pDescription: { $regex: search, $options: "i" } },
+          { pSKU: { $regex: search, $options: "i" } },
+        ];
+      }
+
+      if (req.query.category) {
+        filter.pCategory = req.query.category;
+      }
+
+      if (req.query.status) {
+        filter.pStatus = { $in: [req.query.status, req.query.status.charAt(0).toUpperCase() + req.query.status.slice(1)] };
+      }
+
+      if (req.query.minPrice || req.query.maxPrice) {
+        filter.pPrice = {};
+        if (req.query.minPrice) {
+          filter.pPrice.$gte = parseFloat(req.query.minPrice);
+        }
+        if (req.query.maxPrice) {
+          filter.pPrice.$lte = parseFloat(req.query.maxPrice);
+        }
+      }
+
+      let sortOption = { createdAt: -1 };
+      if (req.query.sort) {
+        switch (req.query.sort) {
+          case "newest":
+            sortOption = { createdAt: -1 };
+            break;
+          case "oldest":
+            sortOption = { createdAt: 1 };
+            break;
+          case "popular":
+            sortOption = { pSold: -1 };
+            break;
+          case "price-low":
+          case "price-asc":
+            sortOption = { pPrice: 1 };
+            break;
+          case "price-high":
+          case "price-desc":
+            sortOption = { pPrice: -1 };
+            break;
+          default:
+            sortOption = { createdAt: -1 };
+        }
+      }
+
+      const total = await productModel.countDocuments(filter);
+      const products = await productModel
+        .find(filter)
+        .populate("pCategory", "_id cName")
+        .sort(sortOption)
+        .skip((page - 1) * limit)
+        .limit(limit);
+
       return res.json({
-        error: "Name 255 & Description must not be 3000 charecter long",
+        success: true,
+        products,
+        pagination: {
+          total,
+          page,
+          limit,
+          pages: Math.ceil(total / limit),
+        },
       });
-    } else {
-      let editData = {
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  static async getSingleProduct(req, res) {
+    try {
+      const { pId } = req.body;
+
+      if (!pId) {
+        return res.status(400).json({ error: "Product ID required" });
+      }
+
+      const product = await productModel
+        .findById(pId)
+        .populate("pCategory", "_id cName");
+
+      if (!product) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+
+      await productModel.findByIdAndUpdate(pId, { $inc: { view_count: 1 } });
+
+      return res.json({
+        success: true,
+        data: product,
+      });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  static async postAddProduct(req, res) {
+    try {
+      const {
         pName,
         pDescription,
+        pShortDescription,
         pPrice,
         pQuantity,
         pCategory,
-        pOffer,
+        discount,
+        pDiscount,
+        pStatus,
+        pSKU,
+        furniture,
+      } = req.body;
+
+      const files = req.files || [];
+
+      if (!pName || !pDescription || !pPrice || !pQuantity || !pCategory || !pStatus) {
+        if (files.length) Product.deleteImages(files, "file");
+        return res.json({ error: "All required fields must be filled" });
+      }
+
+      if (!files.length) {
+        return res.json({ error: "At least one product image is required" });
+      }
+
+      const images = files.map((file, index) => ({
+        filename: file.filename,
+        filepath: `/uploads/products/${file.filename}`,
+        originalName: file.originalname,
+        type: "main",
+        alt: pName,
+        uploadedAt: new Date(),
+        size: file.size,
+      }));
+
+      const thumbnailImage = images[0].filename;
+
+      let furnitureData = {};
+      if (furniture) {
+        try {
+          furnitureData = typeof furniture === "string" ? JSON.parse(furniture) : furniture;
+        } catch (e) {
+          console.warn("Could not parse furniture data");
+        }
+      }
+
+      const newProduct = new productModel({
+        pName,
+        pDescription,
+        pShortDescription,
+        pPrice,
+        pQuantity,
+        pCategory,
+        discount: discount || pDiscount || 0,
+        pDiscount: discount || pDiscount || 0,
+        pStatus,
+        pSKU,
+        images,
+        pImages: images.map(img => img.filename),
+        thumbnailImage,
+        furniture: furnitureData,
+      });
+
+      const savedProduct = await newProduct.save();
+
+      return res.json({
+        success: "Product created successfully",
+        data: { _id: savedProduct._id, pSKU: savedProduct.pSKU },
+      });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  static async postEditProduct(req, res) {
+    try {
+      const {
+        pId,
+        pName,
+        pDescription,
+        pShortDescription,
+        pPrice,
+        pQuantity,
+        pCategory,
+        discount,
+        pDiscount,
+        pStatus,
+        furniture,
+      } = req.body;
+
+      const editFiles = req.files || [];
+
+      if (!pId) {
+        if (editFiles.length) Product.deleteImages(editFiles, "file");
+        return res.json({ error: "Product ID required" });
+      }
+
+      if (!pName || !pDescription || !pPrice || !pQuantity || !pCategory || !pStatus) {
+        if (editFiles.length) Product.deleteImages(editFiles, "file");
+        return res.json({ error: "All required fields must be filled" });
+      }
+
+      const updateData = {
+        pName,
+        pDescription,
+        pShortDescription,
+        pPrice,
+        pQuantity,
+        pCategory,
+        discount: discount || pDiscount || 0,
+        pDiscount: discount || pDiscount || 0,
         pStatus,
       };
-      if (editImages && editImages.length > 0) {
-        let allEditImages = [];
-        for (const img of editImages) {
-          allEditImages.push(img.filename);
-        }
-        editData = { ...editData, pImages: allEditImages };
-        if (pImages) Product.deleteImages(pImages.split(","), "string");
+
+      if (editFiles.length > 0) {
+        const newImages = editFiles.map((file, index) => ({
+          filename: file.filename,
+          filepath: `/uploads/products/${file.filename}`,
+          originalName: file.originalname,
+          type: "main",
+          alt: pName,
+          uploadedAt: new Date(),
+          size: file.size,
+        }));
+
+        updateData.images = newImages;
+        updateData.pImages = newImages.map(img => img.filename);
+        updateData.thumbnailImage = newImages[0].filename;
       }
-      try {
-        let editProduct = productModel.findByIdAndUpdate(pId, editData);
-        editProduct.exec((err) => {
-          if (err) console.log(err);
-          return res.json({ success: "Product edit successfully" });
-        });
-      } catch (err) {
-        console.log(err);
-      }
-    }
-  }
 
-  async getDeleteProduct(req, res) {
-    let { pId } = req.body;
-    if (!pId) {
-      return res.json({ error: "All filled must be required" });
-    } else {
-      try {
-        let deleteProductObj = await productModel.findById(pId);
-        let deleteProduct = await productModel.findByIdAndDelete(pId);
-        if (deleteProduct) {
-          // Delete Image from uploads -> products folder
-          Product.deleteImages(deleteProductObj.pImages, "string");
-
-          // Delete warehouse entry for this product
-          await warehouseModel.deleteOne({ product: pId });
-
-          return res.json({ success: "Product deleted successfully" });
-        }
-      } catch (err) {
-        console.log(err);
-      }
-    }
-  }
-
-  async getSingleProduct(req, res) {
-    let { pId } = req.body;
-    if (!pId) {
-      return res.json({ error: "All filled must be required" });
-    } else {
-      try {
-        let singleProduct = await productModel
-          .findById(pId)
-          .populate("pCategory", "cName")
-          .populate("pRatingsReviews.user", "name email userImage");
-        if (singleProduct) {
-          return res.json({ Product: singleProduct });
-        }
-      } catch (err) {
-        console.log(err);
-      }
-    }
-  }
-
-  async getProductByCategory(req, res) {
-    let { catId } = req.body;
-    if (!catId) {
-      return res.json({ error: "All filled must be required" });
-    } else {
-      try {
-        let products = await productModel
-          .find({ pCategory: catId })
-          .populate("pCategory", "cName");
-        if (products) {
-          return res.json({ Products: products });
-        }
-      } catch (err) {
-        return res.json({ error: "Search product wrong" });
-      }
-    }
-  }
-
-  async getProductByPrice(req, res) {
-    let { price } = req.body;
-    if (!price) {
-      return res.json({ error: "All filled must be required" });
-    } else {
-      try {
-        let products = await productModel
-          .find({ pPrice: { $lt: price } })
-          .populate("pCategory", "cName")
-          .sort({ pPrice: -1 });
-        if (products) {
-          return res.json({ Products: products });
-        }
-      } catch (err) {
-        return res.json({ error: "Filter product wrong" });
-      }
-    }
-  }
-
-  async getWishProduct(req, res) {
-    let { productArray } = req.body;
-    if (!productArray) {
-      return res.json({ error: "All filled must be required" });
-    } else {
-      try {
-        let wishProducts = await productModel.find({
-          _id: { $in: productArray },
-        });
-        if (wishProducts) {
-          return res.json({ Products: wishProducts });
-        }
-      } catch (err) {
-        return res.json({ error: "Filter product wrong" });
-      }
-    }
-  }
-
-  async getCartProduct(req, res) {
-    let { productArray } = req.body;
-    if (!productArray) {
-      return res.json({ error: "All filled must be required" });
-    } else {
-      try {
-        let cartProducts = await productModel.find({
-          _id: { $in: productArray },
-        });
-        if (cartProducts) {
-          return res.json({ Products: cartProducts });
-        }
-      } catch (err) {
-        return res.json({ error: "Cart product wrong" });
-      }
-    }
-  }
-
-  async postAddReview(req, res) {
-    let { pId, uId, rating, review } = req.body;
-    if (!pId || !rating || !review || !uId) {
-      return res.json({ error: "All filled must be required" });
-    } else {
-      let checkReviewRatingExists = await productModel.findOne({ _id: pId });
-      if (checkReviewRatingExists.pRatingsReviews.length > 0) {
-        checkReviewRatingExists.pRatingsReviews.map((item) => {
-          if (item.user === uId) {
-            return res.json({ error: "Your already reviewd the product" });
-          } else {
-            try {
-              let newRatingReview = productModel.findByIdAndUpdate(pId, {
-                $push: {
-                  pRatingsReviews: {
-                    review: review,
-                    user: uId,
-                    rating: rating,
-                  },
-                },
-              });
-              newRatingReview.exec((err, result) => {
-                if (err) {
-                  console.log(err);
-                }
-                return res.json({ success: "Thanks for your review" });
-              });
-            } catch (err) {
-              return res.json({ error: "Cart product wrong" });
-            }
-          }
-        });
-      } else {
+      if (furniture) {
         try {
-          let newRatingReview = productModel.findByIdAndUpdate(pId, {
-            $push: {
-              pRatingsReviews: { review: review, user: uId, rating: rating },
-            },
-          });
-          newRatingReview.exec((err, result) => {
-            if (err) {
-              console.log(err);
-            }
-            return res.json({ success: "Thanks for your review" });
-          });
-        } catch (err) {
-          return res.json({ error: "Cart product wrong" });
+          updateData.furniture = typeof furniture === "string" ? JSON.parse(furniture) : furniture;
+        } catch (e) {
+          console.warn("Could not parse furniture data");
         }
       }
+
+      const updatedProduct = await productModel.findByIdAndUpdate(
+        pId,
+        updateData,
+        { new: true }
+      );
+
+      if (!updatedProduct) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+
+      return res.json({
+        success: "Product updated successfully",
+        data: updatedProduct,
+      });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
     }
   }
 
-  async deleteReview(req, res) {
-    let { rId, pId } = req.body;
-    if (!rId) {
-      return res.json({ message: "All filled must be required" });
-    } else {
-      try {
-        let reviewDelete = productModel.findByIdAndUpdate(pId, {
-          $pull: { pRatingsReviews: { _id: rId } },
-        });
-        reviewDelete.exec((err, result) => {
-          if (err) {
-            console.log(err);
-          }
-          return res.json({ success: "Your review is deleted" });
-        });
-      } catch (err) {
-        console.log(err);
+  static async getDeleteProduct(req, res) {
+    try {
+      const { pId } = req.body;
+
+      if (!pId) {
+        return res.json({ error: "Product ID required" });
       }
+
+      const product = await productModel.findById(pId);
+
+      if (!product) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+
+      if (product.images && product.images.length) {
+        const imageFilenames = product.images.map((img) => img.filename);
+        Product.deleteImages(imageFilenames, "string");
+      }
+
+      await productModel.findByIdAndDelete(pId);
+
+      return res.json({ success: "Product deleted successfully" });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  // ===========================
+  // FILTERING & SEARCH
+  // ===========================
+
+  static async getProductByCategory(req, res) {
+    try {
+      const { categoryId, limit = 12, page = 1 } = req.body;
+
+      if (!categoryId) {
+        return res.json({ error: "Category ID required" });
+      }
+
+      const skip = (page - 1) * limit;
+
+      const total = await productModel.countDocuments({
+        pCategory: categoryId,
+        pStatus: { $in: ["active", "Active"] },
+      });
+
+      const products = await productModel
+        .find({ pCategory: categoryId, pStatus: { $in: ["active", "Active"] } })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+      return res.json({
+        success: true,
+        data: { products, total, page, limit },
+      });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  static async getProductByPrice(req, res) {
+    try {
+      const { minPrice, maxPrice, limit = 12, page = 1 } = req.body;
+
+      const skip = (page - 1) * limit;
+
+      const filter = {
+        pStatus: { $in: ["active", "Active"] },
+        pPrice: { $gte: minPrice, $lte: maxPrice },
+      };
+
+      const total = await productModel.countDocuments(filter);
+
+      const products = await productModel
+        .find(filter)
+        .sort({ pPrice: 1 })
+        .skip(skip)
+        .limit(limit);
+
+      return res.json({
+        success: true,
+        data: { products, total, page, limit },
+      });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  // ===========================
+  // REVIEWS & RATINGS
+  // ===========================
+
+  static async postAddReview(req, res) {
+    try {
+      const { pId, rating, title, review, userId } = req.body;
+
+      if (!pId || !rating || !review) {
+        return res.json({ error: "Product ID, rating, and review are required" });
+      }
+
+      const newReview = {
+        rating,
+        title,
+        review,
+        user: userId,
+        createdAt: new Date(),
+      };
+
+      const product = await productModel.findByIdAndUpdate(
+        pId,
+        { $push: { pRatingsReviews: newReview } },
+        { new: true }
+      );
+
+      return res.json({
+        success: "Review added successfully",
+        data: product,
+      });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  static async deleteReview(req, res) {
+    try {
+      const { pId, reviewId } = req.body;
+
+      if (!pId || !reviewId) {
+        return res.json({ error: "Product ID and Review ID required" });
+      }
+
+      const product = await productModel.findByIdAndUpdate(
+        pId,
+        { $pull: { pRatingsReviews: { _id: reviewId } } },
+        { new: true }
+      );
+
+      return res.json({
+        success: "Review deleted successfully",
+        data: product,
+      });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  // ===========================
+  // UTILITY METHODS
+  // ===========================
+
+  static async getBestsellers(req, res) {
+    try {
+      const limit = parseInt(req.query.limit) || 12;
+      const products = await productModel.findBestsellers(limit);
+      return res.json({ success: true, data: products });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  static async getNewProducts(req, res) {
+    try {
+      const limit = parseInt(req.query.limit) || 12;
+      const days = parseInt(req.query.days) || 30;
+      const products = await productModel.findNewProducts(limit, days);
+      return res.json({ success: true, data: products });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  static async getTopRated(req, res) {
+    try {
+      const limit = parseInt(req.query.limit) || 12;
+      const products = await productModel.findTopRated(limit);
+      return res.json({ success: true, data: products });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
     }
   }
 }
 
-const productController = new Product();
-module.exports = productController;
+module.exports = Product;

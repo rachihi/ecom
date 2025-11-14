@@ -33,6 +33,7 @@ const orderRouter = require("./routes/orders");
 const usersRouter = require("./routes/users");
 const customizeRouter = require("./routes/customize");
 const customersRouter = require("./routes/customers");
+const customerAuthRouter = require("./routes/customerAuth"); // Customer auth routes
 const warehouseRouter = require("./routes/warehouse");
 const suppliersRouter = require("./routes/suppliers");
 const purchaseOrdersRouter = require("./routes/purchaseOrders");
@@ -73,8 +74,9 @@ app.use(express.json());
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Routes
-app.use("/api", authRouter);
+app.use("/api", authRouter); // Admin auth (existing)
 app.use("/api/user", usersRouter);
+app.use("/api/customer", customerAuthRouter); // Customer auth (new)
 app.use("/api/category", categoryRouter);
 app.use("/api/product", productRouter);
 app.use("/api", brainTreeRouter);

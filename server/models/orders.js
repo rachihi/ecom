@@ -19,7 +19,8 @@ const orderSchema = new mongoose.Schema(
     user: {
       type: ObjectId,
       ref: "users",
-      required: true,
+      required: false,
+      default: null,
     },
     amount: {
       type: Number,
