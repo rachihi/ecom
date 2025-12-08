@@ -24,17 +24,19 @@ api.interceptors.request.use(
 );
 
 // Handle response errors
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('serviceToken');
-      window.location.href = '/signin';
+(error) => {
+  if (error.response?.status === 401) {
+    // Ignore 401 from signin request to allow showing error message
+    if (error.config.url.includes('signin')) {
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
+
+    // Token expired or invalid
+    localStorage.removeItem('serviceToken');
+    window.location.href = '/signin';
   }
-);
+  return Promise.reject(error);
+}
 
 // Create multipart form-data instance for file uploads
 const apiFormData = axios.create({

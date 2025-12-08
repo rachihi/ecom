@@ -23,8 +23,7 @@ const useFeaturedProducts = (itemsCount = 6) => {
           setLoading(false);
         }
       } else {
-        // Transform API response using productAPI.transformProduct
-        const items = products.map(productAPI.transformProduct);
+        const items = products
         if (didMount) {
           setFeaturedProducts(items);
           setLoading(false);

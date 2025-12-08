@@ -13,17 +13,16 @@ const useRecommendedProducts = (itemsCount = 6) => {
       setLoading(true);
       setError('');
 
-      // Call API to get recommended products
       const response = await productAPI.getRecommendedProducts(itemsCount);
       const { products = [] } = response.data;      
-      if (products.length === 0) {
+
+      if (products.length == 0) {
         if (didMount) {
           setError('No recommended products found.');
           setLoading(false);
         }
       } else {
-        // Transform API response using productAPI.transformProduct
-        const items = products.map(productAPI.transformProduct);
+        const items = products
         if (didMount) {
           setRecommendedProducts(items);
           setLoading(false);

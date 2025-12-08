@@ -26,7 +26,6 @@ const PurchaseOrdersPage = Loadable(lazy(() => import('pages/admin/purchase-orde
 const PaymentsPage = Loadable(lazy(() => import('pages/admin/payments')));
 const CashbookPage = Loadable(lazy(() => import('pages/admin/cashbook')));
 
-const PosPage = Loadable(lazy(() => import('pages/admin/pos')));
 const ProductsPage = Loadable(lazy(() => import('pages/admin/products')));
 const CategoriesPage = Loadable(lazy(() => import('pages/admin/categories')));
 
@@ -56,7 +55,6 @@ const MainRoutes = {
         { path: 'admin/payments', element: <PaymentsPage /> },
         { path: 'admin/cashbook', element: <CashbookPage /> },
 
-        { path: 'admin/pos', element: <PosPage /> },
         { path: 'admin/products', element: <ProductsPage /> },
         { path: 'admin/categories', element: <CategoriesPage /> }
       ]

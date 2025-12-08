@@ -16,19 +16,19 @@ export default function WarehousePage() {
   const [note, setNote] = useState<string>('');
 
   const openAdjust = (r: WarehouseRow) => { setRow(r); setDelta(0); setNote(''); setOpen(true); };
-  const handleAdjust = async () => { if (!row) return; await axios.post('/api/warehouse/adjust', { product: typeof row.product==='object'?row.product._id:row.product, delta: Number(delta) }); setOpen(false); mutate(); };
+  const handleAdjust = async () => { if (!row) return; await axios.post('/api/warehouse/adjust', { product: typeof row.product === 'object' ? row.product._id : row.product, delta: Number(delta) }); setOpen(false); mutate(); };
 
   return (
     <MainCard title="Tồn kho">
       {isLoading && <Typography>Đang tải...</Typography>}
       <Table size="small">
         <TableHead>
-          <TableRow>
-            <TableCell>Sản phẩm</TableCell>
-            <TableCell>Tồn</TableCell>
-            <TableCell>Vị trí</TableCell>
-            <TableCell>Cập nhật</TableCell>
-            <TableCell align="right">Hành động</TableCell>
+          <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+            <TableCell><strong>Sản phẩm</strong></TableCell>
+            <TableCell><strong>Tồn</strong></TableCell>
+            <TableCell><strong>Vị trí</strong></TableCell>
+            <TableCell><strong>Cập nhật</strong></TableCell>
+            <TableCell align="right"><strong>Hành động</strong></TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -38,22 +38,22 @@ export default function WarehousePage() {
               <TableCell>{r.quantity}</TableCell>
               <TableCell>{r.location}</TableCell>
               <TableCell>{r.lastUpdated && new Date(r.lastUpdated).toLocaleString()}</TableCell>
-              <TableCell align="right"><Button size="small" onClick={()=>openAdjust(r)}>Điều chỉnh</Button></TableCell>
+              <TableCell align="right"><Button size="small" onClick={() => openAdjust(r)}>Điều chỉnh</Button></TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
 
-      <Dialog open={open} onClose={()=>setOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Điều chỉnh tồn kho</DialogTitle>
         <DialogContent>
-          <TextField fullWidth label="Sản phẩm" value={typeof row?.product==='string'?row?.product:row?.product?.pName || ''} disabled sx={{ my: 1 }} />
+          <TextField fullWidth label="Sản phẩm" value={typeof row?.product === 'string' ? row?.product : row?.product?.pName || ''} disabled sx={{ my: 1 }} />
           <TextField fullWidth label="Tồn hiện tại" value={row?.quantity || 0} disabled sx={{ my: 1 }} />
-          <TextField fullWidth type="number" label="Điều chỉnh (+/-)" value={delta} onChange={(e)=>setDelta(Number(e.target.value))} sx={{ my: 1 }} />
-          <TextField fullWidth label="Lý do (tuỳ chọn)" value={note} onChange={(e)=>setNote(e.target.value)} sx={{ my: 1 }} />
+          <TextField fullWidth type="number" label="Điều chỉnh (+/-)" value={delta} onChange={(e) => setDelta(Number(e.target.value))} sx={{ my: 1 }} />
+          <TextField fullWidth label="Lý do (tuỳ chọn)" value={note} onChange={(e) => setNote(e.target.value)} sx={{ my: 1 }} />
         </DialogContent>
         <DialogActions>
-          <Button onClick={()=>setOpen(false)}>Huỷ</Button>
+          <Button onClick={() => setOpen(false)}>Huỷ</Button>
           <Button variant="contained" onClick={handleAdjust}>Lưu</Button>
         </DialogActions>
       </Dialog>

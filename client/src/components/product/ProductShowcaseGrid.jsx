@@ -13,7 +13,7 @@ const ProductShowcase = ({ products, skeletonCount }) => (
       />
     )) : products.map((product) => (
       <FeaturedProduct
-        key={product.id}
+        key={product._id}
         product={product}
       />
     ))}

@@ -15,12 +15,12 @@ const ProductItem = ({ product, isItemOnBasket, addToBasket }) => {
   const onClickItem = () => {
     if (!product) return;
 
-    if (product.id) {
-      history.push(`/product/${product.id}`);
+    if (product._id) {
+      history.push(`/product/${product._id}`);
     }
   };
 
-  const itemOnBasket = isItemOnBasket ? isItemOnBasket(product.id) : false;
+  const itemOnBasket = isItemOnBasket ? isItemOnBasket(product._id) : false;
 
   const handleAddToBasket = () => {
     // Require login to add to basket
@@ -35,7 +35,7 @@ const ProductItem = ({ product, isItemOnBasket, addToBasket }) => {
   return (
     <SkeletonTheme color="#e1e1e1" highlightColor="#f2f2f2">
       <div
-        className={`product-card ${!product.id ? 'product-loading' : ''}`}
+        className={`product-card ${!product._id ? 'product-loading' : ''}`}
         style={{
           border: product && itemOnBasket ? '1px solid #a6a5a5' : '',
           boxShadow: product && itemOnBasket ? '0 10px 15px rgba(0, 0, 0, .07)' : 'none'
@@ -48,27 +48,27 @@ const ProductItem = ({ product, isItemOnBasket, addToBasket }) => {
           role="presentation"
         >
           <div className="product-card-img-wrapper">
-            {product.image ? (
+            {product.images ? (
               <ImageLoader
-                alt={product.name}
+                src={product.images?.[0] || ''}
+                alt={product.pName}
                 className="product-card-img"
-                src={product.images[0]}
               />
             ) : <Skeleton width="100%" height="90%" />}
           </div>
           <div className="product-details">
             <h5 className="product-card-name text-overflow-ellipsis margin-auto">
-              {product.name || <Skeleton width={80} />}
+              {product.pName || <Skeleton width={80} />}
             </h5>
             <p className="product-card-brand">
-              {product.brand || <Skeleton width={60} />}
+              {product?.pCategory?.cName || <Skeleton width={60} />}
             </p>
             <h4 className="product-card-price">
               {product.price ? displayMoney(product.price) : <Skeleton width={40} />}
             </h4>
           </div>
         </div>
-        {product.id && (
+        {product._id && (
           <button
             className={`product-card-button button-small button button-block ${itemOnBasket ? 'button-border button-border-gray' : ''}`}
             onClick={handleAddToBasket}

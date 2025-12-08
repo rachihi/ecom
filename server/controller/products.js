@@ -4,6 +4,7 @@
  */
 
 const productModel = require("../models/products");
+const warehouseModel = require("../models/warehouses");
 const fs = require("fs");
 const path = require("path");
 
@@ -45,6 +46,14 @@ class Product {
         if (req.query.maxPrice) {
           filter.pPrice.$lte = parseFloat(req.query.maxPrice);
         }
+      }
+
+      if (req.query.isFeatured) {
+        filter.isFeatured = true;
+      }
+
+      if (req.query.isRecommended) {
+        filter.isRecommended = true;
       }
 
       let sortOption = { createdAt: -1 };
@@ -143,6 +152,11 @@ class Product {
         pStatus,
         pSKU,
         furniture,
+        isFeatured,
+        isRecommended,
+        isNewProduct,
+        isBestseller,
+        isOnSale,
       } = req.body;
 
 
@@ -209,9 +223,26 @@ class Product {
         images,
         thumbnailImage,
         furniture: furnitureData,
+        isFeatured,
+        isRecommended,
+        isNewProduct,
+        isBestseller,
+        isOnSale,
       });
 
       const savedProduct = await newProduct.save();
+
+      // Create/Update Warehouse
+      const location = req.body.location || null;
+      await warehouseModel.findOneAndUpdate(
+        { product: savedProduct._id },
+        {
+          quantity: pQuantity,
+          location: location,
+          lastUpdated: Date.now()
+        },
+        { upsert: true }
+      );
 
       return res.json({
         success: "Product created successfully",
@@ -234,7 +265,6 @@ class Product {
         pPrice,
         pCost,
         pComparePrice,
-        pQuantity,
         pCategory,
         discount,
         pDiscount,
@@ -250,7 +280,7 @@ class Product {
       if (!pId) {
         return res.json({ error: "Product ID required" });
       }
-      if (!pName || !pDescription || !pPrice || !pQuantity || !pCategory || !pStatus) {
+      if (!pName || !pDescription || !pPrice || !pCategory || !pStatus) {
         return res.json({ error: "All required fields must be filled" });
       }
       // Không required ảnh nữa
@@ -267,7 +297,6 @@ class Product {
         pShortDescription,
         pSKU,
         pPrice,
-        pQuantity,
         pCost,
         pComparePrice,
         isFeatured,
@@ -377,7 +406,7 @@ class Product {
 
   // ===========================
   // FILTERING & SEARCH
-                // images = images.map(img => `${SERVER_URL}/uploads/products/${img}`);
+  // images = images.map(img => `${SERVER_URL}/uploads/products/${img}`);
   // ===========================
 
   static async getProductByCategory(req, res) {

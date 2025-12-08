@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
-const { JWT_SECRET } = process.env;
+const { JWT_SECRET = "test_secret_key_123" } = process.env;
 
 class CustomerAuth {
   /**
@@ -24,31 +24,48 @@ class CustomerAuth {
 
       // Check if email already exists
       const existingCustomer = await customerModel.findOne({ email });
-      if (existingCustomer && existingCustomer.isRegistered) {
-        return res.status(400).json({
-          error: "Email already registered",
-        });
-      }
 
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Create customer
-      const newCustomer = await new customerModel({
-        fullName,
-        email,
-        password: hashedPassword,
-        phoneNumber,
-        address: address || null,
-        isRegistered: true,
-        lastLogin: new Date(),
-      }).save();
+      let customerToReturn;
+
+      if (existingCustomer) {
+        if (existingCustomer.isRegistered) {
+          return res.status(400).json({
+            error: "Email already registered",
+          });
+        } else {
+          // Update existing guest customer to registered
+          existingCustomer.fullName = fullName;
+          existingCustomer.password = hashedPassword;
+          existingCustomer.phoneNumber = phoneNumber;
+          existingCustomer.address = address || existingCustomer.address;
+          existingCustomer.isRegistered = true;
+          existingCustomer.lastLogin = new Date();
+
+          const updatedCustomer = await existingCustomer.save();
+          customerToReturn = updatedCustomer;
+        }
+      } else {
+        // Create new customer
+        const newCustomer = await new customerModel({
+          fullName,
+          email,
+          password: hashedPassword,
+          phoneNumber,
+          address: address || null,
+          isRegistered: true,
+          lastLogin: new Date(),
+        }).save();
+        customerToReturn = newCustomer;
+      }
 
       // Generate JWT token
       const token = jwt.sign(
         {
-          _id: newCustomer._id,
-          email: newCustomer.email,
+          _id: customerToReturn._id,
+          email: customerToReturn.email,
           role: "CUSTOMER",
         },
         JWT_SECRET,
@@ -59,16 +76,16 @@ class CustomerAuth {
         success: true,
         token,
         customer: {
-          _id: newCustomer._id,
-          fullName: newCustomer.fullName,
-          email: newCustomer.email,
-          phoneNumber: newCustomer.phoneNumber,
-          address: newCustomer.address,
+          _id: customerToReturn._id,
+          fullName: customerToReturn.fullName,
+          email: customerToReturn.email,
+          phoneNumber: customerToReturn.phoneNumber,
+          address: customerToReturn.address,
         },
       });
     } catch (err) {
       console.error("Customer signup error:", err);
-      return res.status(500).json({ error: "Internal server error" });
+      return res.status(500).json({ error: err.message || "Internal server error" });
     }
   }
 

@@ -6,7 +6,7 @@ import {
   SIGNIN_WITH_GITHUB, SIGNIN_WITH_GOOGLE,
   SIGNOUT, SIGNUP
 } from '@/constants/constants';
-import { SIGNIN as ROUTE_SIGNIN } from '@/constants/routes';
+import { SIGNIN as ROUTE_SIGNIN, HOME as ROUTE_HOME } from '@/constants/routes';
 import defaultAvatar from '@/images/defaultAvatar.jpg';
 import defaultBanner from '@/images/defaultBanner.jpg';
 import { call, put } from 'redux-saga/effects';
@@ -22,6 +22,9 @@ import { authAPI } from '@/services/api';
 function* handleError(e) {
   const obj = { success: false, type: 'auth', isError: true };
   yield put(setAuthenticating(false));
+
+  // Extract error message from API response if available
+  const errorMessage = e.response?.data?.error || e.message;
 
   switch (e.code) {
     case 'auth/network-request-failed':
@@ -40,7 +43,7 @@ function* handleError(e) {
       yield put(setAuthStatus({ ...obj, message: 'Failed to send password reset email. Did you type your email correctly?' }));
       break;
     default:
-      yield put(setAuthStatus({ ...obj, message: e.message }));
+      yield put(setAuthStatus({ ...obj, message: errorMessage }));
       break;
   }
 }
@@ -76,6 +79,7 @@ function* authSaga({ type, payload }) {
           yield put(setProfile(user));
           yield put(signInSuccess(user));
           yield put(setAuthenticating(false));
+          yield call(history.push, ROUTE_HOME);
         } else {
           throw new Error('Login failed');
         }
@@ -120,25 +124,10 @@ function* authSaga({ type, payload }) {
 
         const response = yield call(authAPI.signup, fullName, payload.email, payload.password, phoneNumber, address);
 
-        if (response.data.token) {
-          // Save token to localStorage
-          localStorage.setItem('serviceToken', response.data.token);
-
-          // Set customer profile
-          const user = {
-            id: response.data.customer._id,
-            fullname: response.data.customer.fullName,
-            email: response.data.customer.email,
-            phoneNumber: response.data.customer.phoneNumber,
-            address: response.data.customer.address,
-            role: 'CUSTOMER',
-            avatar: defaultAvatar,
-            banner: defaultBanner,
-          };
-
-          yield put(setProfile(user));
-          yield put(signInSuccess(user));
+        if (response.data.success) {
           yield put(setAuthenticating(false));
+          yield put(setAuthStatus({ success: true, message: 'Account created successfully. Please sign in.' }));
+          yield call(history.push, ROUTE_SIGNIN);
         } else {
           throw new Error('Signup failed');
         }

@@ -62,15 +62,15 @@ export default function CategoriesPage() {
     <MainCard title={'Danh mục'} secondary={<Button variant="contained" onClick={handleOpenCreate}>{'Thêm danh mục'}</Button>}>
       <Stack spacing={2}>
         <Stack direction="row" spacing={1}>
-          <TextField size="small" label="Tìm kiếm" value={q} onChange={(e)=>{ setQ(e.target.value); setPage(0); }} sx={{ width: 300 }} />
+          <TextField size="small" label="Tìm kiếm" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} sx={{ width: 300 }} />
         </Stack>
         {isLoading && <Typography>{'Đang tải...'}</Typography>}
         <Table size="small">
           <TableHead>
-            <TableRow>
-              <TableCell>{'Tên'}</TableCell>
-              <TableCell>{'Trạng thái'}</TableCell>
-              <TableCell align="right">{'Hành động'}</TableCell>
+            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+              <TableCell><strong>{'Tên'}</strong></TableCell>
+              <TableCell><strong>{'Trạng thái'}</strong></TableCell>
+              <TableCell align="right"><strong>{'Hành động'}</strong></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -88,14 +88,16 @@ export default function CategoriesPage() {
             ))}
           </TableBody>
         </Table>
-        <TablePagination
-          component="div"
-          count={total}
-          page={page}
-          onPageChange={(_e, p) => setPage(p)}
-          rowsPerPage={limit}
-          onRowsPerPageChange={(e) => { setLimit(parseInt(e.target.value, 10)); setPage(0); }}
-        />
+        <Stack alignItems="flex-end" sx={{ mt: 2 }}>
+          <TablePagination
+            component="div"
+            count={total}
+            page={page}
+            onPageChange={(_e, p) => setPage(p)}
+            rowsPerPage={limit}
+            onRowsPerPageChange={(e) => { setLimit(parseInt(e.target.value, 10)); setPage(0); }}
+          />
+        </Stack>
       </Stack>
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">

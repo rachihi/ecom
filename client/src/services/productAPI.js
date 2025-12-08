@@ -268,7 +268,6 @@ export const productAPI = {
       reviewCount: apiProduct.pRatingsReviews?.length || 0,
 
       // Bảo hành & Chăm sóc
-      warranty: apiProduct.furniture?.warranty || {},
       care: apiProduct.furniture?.care || [],
       assembly: apiProduct.furniture?.assembly || {},
     };

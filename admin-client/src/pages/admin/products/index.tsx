@@ -107,6 +107,7 @@ export default function ProductsPage() {
       pComparePrice: 0,
       pCost: 0,
       pQuantity: 0,
+      location: '',
       pDiscount: 0,
       pOffer: '',
       offerExpiry: '',
@@ -121,7 +122,10 @@ export default function ProductsPage() {
         colors: [],
         style: [],
         features: []
-      }
+      },
+      pColorsText: '',
+      pStylesText: '',
+      pFeaturesText: ''
     });
     setImgPreviews([]); // Clear previews when creating new product
     setOpen(true);
@@ -135,7 +139,13 @@ export default function ProductsPage() {
         colors: newRow.furniture.colors.map((c: any) => (typeof c === 'object' && c.colorName ? c.colorName : c))
       };
     }
-    setForm(newRow);
+    // Initialize text fields from arrays
+    setForm({
+      ...newRow,
+      pColorsText: newRow.furniture?.colors?.join(', ') || '',
+      pStylesText: newRow.furniture?.style?.join(', ') || '',
+      pFeaturesText: newRow.furniture?.features?.join(', ') || ''
+    });
     // Set imgPreviews to existing images for editing
     setImgPreviews(newRow.images || []);
     setOpen(true);
@@ -182,7 +192,12 @@ export default function ProductsPage() {
         isOnSale: form.isOnSale || false,
 
         // Furniture fields
-        furniture: form.furniture || {},
+        furniture: {
+          ...form.furniture,
+          colors: form.pColorsText ? form.pColorsText.split(',').map((s: string) => s.trim()).filter((s: string) => s) : [],
+          style: form.pStylesText ? form.pStylesText.split(',').map((s: string) => s.trim()).filter((s: string) => s) : [],
+          features: form.pFeaturesText ? form.pFeaturesText.split(',').map((s: string) => s.trim()).filter((s: string) => s) : []
+        },
 
         // Images
         images: imageUrls
@@ -337,19 +352,7 @@ export default function ProductsPage() {
                 <strong>Trạng thái</strong>
               </TableCell>
               <TableCell>
-                <strong>Nổi bật</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Đề xuất</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Mới về</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Bán chạy</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Đang giảm giá</strong>
+                <strong>Tags</strong>
               </TableCell>
               <TableCell align="right">
                 <strong>Hành động</strong>
@@ -412,11 +415,15 @@ export default function ProductsPage() {
                         variant="outlined"
                       />
                     </TableCell>
-                    <TableCell>{row.isFeatured ? <Chip label="✔" color="success" size="small" /> : ''}</TableCell>
-                    <TableCell>{row.isRecommended ? <Chip label="✔" color="primary" size="small" /> : ''}</TableCell>
-                    <TableCell>{row.isNewProduct ? <Chip label="✔" color="info" size="small" /> : ''}</TableCell>
-                    <TableCell>{row.isBestseller ? <Chip label="✔" color="warning" size="small" /> : ''}</TableCell>
-                    <TableCell>{row.isOnSale ? <Chip label="✔" color="error" size="small" /> : ''}</TableCell>
+                    <TableCell>
+                      <Stack direction="row" spacing={0.5} flexWrap="wrap" gap={0.5}>
+                        {row.isFeatured && <Chip label="Nổi bật" color="success" size="small" variant="outlined" />}
+                        {row.isRecommended && <Chip label="Đề xuất" color="primary" size="small" variant="outlined" />}
+                        {row.isNewProduct && <Chip label="Mới" color="info" size="small" variant="outlined" />}
+                        {row.isBestseller && <Chip label="Bán chạy" color="warning" size="small" variant="outlined" />}
+                        {row.isOnSale && <Chip label="Giảm giá" color="error" size="small" variant="outlined" />}
+                      </Stack>
+                    </TableCell>
                     <TableCell align="right">
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
                         <Button size="small" variant="outlined" onClick={() => startEdit(row)}>
@@ -562,8 +569,18 @@ export default function ProductsPage() {
                       type="number"
                       label="Số lượng tồn *"
                       required
+                      disabled={!!form._id}
                       value={form.pQuantity || 0}
                       onChange={(e) => setForm((f: any) => ({ ...f, pQuantity: Number(e.target.value) }))}
+                    />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <TextField
+                      fullWidth
+                      label="Vị trí kho"
+                      value={form.location || ''}
+                      onChange={(e) => setForm((f: any) => ({ ...f, location: e.target.value }))}
+                      placeholder="VD: Kệ A, Hàng 1"
                     />
                   </Grid>
                   <Grid item xs={6}>
@@ -785,19 +802,8 @@ export default function ProductsPage() {
                       fullWidth
                       label="Màu sắc (cách nhau bằng dấu phẩy)"
                       size="small"
-                      value={form.furniture?.colors?.join(', ') || ''}
-                      onChange={(e) =>
-                        setForm((f: any) => ({
-                          ...f,
-                          furniture: {
-                            ...f.furniture,
-                            colors: e.target.value
-                              .split(',')
-                              .map((c: string) => c.trim())
-                              .filter((c: string) => c)
-                          }
-                        }))
-                      }
+                      value={form.pColorsText || ''}
+                      onChange={(e) => setForm((f: any) => ({ ...f, pColorsText: e.target.value }))}
                       placeholder="VD: Đen, Trắng, Xám"
                     />
                   </Grid>
@@ -808,19 +814,8 @@ export default function ProductsPage() {
                       fullWidth
                       label="Phong cách (cách nhau bằng dấu phẩy)"
                       size="small"
-                      value={form.furniture?.style?.join(', ') || ''}
-                      onChange={(e) =>
-                        setForm((f: any) => ({
-                          ...f,
-                          furniture: {
-                            ...f.furniture,
-                            style: e.target.value
-                              .split(',')
-                              .map((s: string) => s.trim())
-                              .filter((s: string) => s)
-                          }
-                        }))
-                      }
+                      value={form.pStylesText || ''}
+                      onChange={(e) => setForm((f: any) => ({ ...f, pStylesText: e.target.value }))}
                       placeholder="VD: Hiện đại, Tối giản, Cổ điển"
                     />
                   </Grid>
@@ -831,19 +826,8 @@ export default function ProductsPage() {
                       fullWidth
                       label="Tính năng (cách nhau bằng dấu phẩy)"
                       size="small"
-                      value={form.furniture?.features?.join(', ') || ''}
-                      onChange={(e) =>
-                        setForm((f: any) => ({
-                          ...f,
-                          furniture: {
-                            ...f.furniture,
-                            features: e.target.value
-                              .split(',')
-                              .map((f: string) => f.trim())
-                              .filter((f: string) => f)
-                          }
-                        }))
-                      }
+                      value={form.pFeaturesText || ''}
+                      onChange={(e) => setForm((f: any) => ({ ...f, pFeaturesText: e.target.value }))}
                       placeholder="VD: Có thể gập, Có ngăn chứa, Chống nước"
                     />
                   </Grid>
