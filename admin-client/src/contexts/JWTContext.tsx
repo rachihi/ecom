@@ -102,10 +102,14 @@ export const JWTProvider = ({ children }: { children: ReactElement }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const response = await axios.post('/api/signin', { email, password });
-    if (response.data?.error) throw new Error(response.data.error);
-    const { token } = response.data;
-    setSession(token);
+    try {
+      const response = await axios.post('/api/signin', { email, password });
+      const { token } = response.data;
+      setSession(token);
+    } catch (err: any) {
+      const errorMessage = err.error || err.message || (typeof err === 'string' ? err : 'Something went wrong');
+      throw new Error(errorMessage);
+    }
 
     // Fetch full user profile after login
     try {
@@ -174,7 +178,7 @@ export const JWTProvider = ({ children }: { children: ReactElement }) => {
     console.log('email - ', email);
   };
 
-  const updateProfile = () => {};
+  const updateProfile = () => { };
 
   if (state.isInitialized !== undefined && !state.isInitialized) {
     return <Loader />;

@@ -51,15 +51,13 @@ interface ProductRow {
   furniture?: {
     dimensions?: { length?: number; width?: number; height?: number; depth?: number };
     materials?: { primary?: string; secondary?: string };
-    colors?: string[];
-    style?: string[];
-    features?: string[];
   };
   isFeatured?: boolean;
   isRecommended?: boolean;
   isNewProduct?: boolean;
   isBestseller?: boolean;
   isOnSale?: boolean;
+  pSold?: number; // Add pSold
 }
 
 export default function ProductsPage() {
@@ -118,45 +116,29 @@ export default function ProductsPage() {
       isOnSale: false,
       furniture: {
         dimensions: { length: 0, width: 0, height: 0, depth: 0 },
-        materials: { primary: '', secondary: '' },
-        colors: [],
-        style: [],
-        features: []
-      },
-      pColorsText: '',
-      pStylesText: '',
-      pFeaturesText: ''
+        materials: { primary: '', secondary: '' }
+      }
     });
     setImgPreviews([]); // Clear previews when creating new product
     setOpen(true);
   };
   const startEdit = (row: ProductRow) => {
-    // Transform furniture.colors from array of objects to array of strings
-    let newRow = { ...row };
-    if (newRow.furniture && Array.isArray(newRow.furniture.colors)) {
-      newRow.furniture = {
-        ...newRow.furniture,
-        colors: newRow.furniture.colors.map((c: any) => (typeof c === 'object' && c.colorName ? c.colorName : c))
-      };
-    }
     // Initialize text fields from arrays
     setForm({
-      ...newRow,
-      pColorsText: newRow.furniture?.colors?.join(', ') || '',
-      pStylesText: newRow.furniture?.style?.join(', ') || '',
-      pFeaturesText: newRow.furniture?.features?.join(', ') || ''
+      ...row
     });
     // Set imgPreviews to existing images for editing
-    setImgPreviews(newRow.images || []);
+    setImgPreviews(row.images || []);
     setOpen(true);
   };
 
   const handleSave = async () => {
     try {
       setIsLoading2(true);
+      console.log(form);
 
       // Validate required fields
-      if (!form.pName || !form.pDescription || !form.pPrice || !form.pQuantity || !form.pCategory || !form.pStatus) {
+      if (!form.pName || !form.pDescription || !form.pPrice || form.pQuantity === undefined || form.pQuantity === null || !form.pCategory || !form.pStatus) {
         setSnack({ open: true, message: 'Vui lòng nhập đầy đủ các trường bắt buộc', severity: 'error' });
         setIsLoading2(false);
         return;
@@ -193,10 +175,7 @@ export default function ProductsPage() {
 
         // Furniture fields
         furniture: {
-          ...form.furniture,
-          colors: form.pColorsText ? form.pColorsText.split(',').map((s: string) => s.trim()).filter((s: string) => s) : [],
-          style: form.pStylesText ? form.pStylesText.split(',').map((s: string) => s.trim()).filter((s: string) => s) : [],
-          features: form.pFeaturesText ? form.pFeaturesText.split(',').map((s: string) => s.trim()).filter((s: string) => s) : []
+          ...form.furniture
         },
 
         // Images
@@ -248,64 +227,7 @@ export default function ProductsPage() {
 
   return (
     <>
-      <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-        <TextField
-          size="small"
-          placeholder="Tìm kiếm sản phẩm..."
-          value={q}
-          onChange={(e) => {
-            setQ(e.target.value);
-            setPage(0);
-          }}
-          sx={{ minWidth: 200 }}
-        />
-        <Select
-          size="small"
-          value={filterCategory}
-          onChange={(e) => {
-            setFilterCategory(e.target.value);
-            setPage(0);
-          }}
-          displayEmpty
-          sx={{ minWidth: 150 }}
-        >
-          <MenuItem value="">Tất cả danh mục</MenuItem>
-          {categories.map((c: any) => (
-            <MenuItem key={c._id} value={c._id}>
-              {c.cName}
-            </MenuItem>
-          ))}
-        </Select>
-        <Select
-          size="small"
-          value={filterStatus}
-          onChange={(e) => {
-            setFilterStatus(e.target.value);
-            setPage(0);
-          }}
-          displayEmpty
-          sx={{ minWidth: 120 }}
-        >
-          <MenuItem value="">Tất cả trạng thái</MenuItem>
-          <MenuItem value="Active">Đang bán</MenuItem>
-          <MenuItem value="Inactive">Ngưng bán</MenuItem>
-        </Select>
-        <Select
-          size="small"
-          value={sortBy}
-          onChange={(e) => {
-            setSortBy(e.target.value);
-            setPage(0);
-          }}
-          sx={{ minWidth: 120 }}
-        >
-          <MenuItem value="newest">Mới nhất</MenuItem>
-          <MenuItem value="oldest">Cũ nhất</MenuItem>
-          <MenuItem value="price-low">Giá thấp</MenuItem>
-          <MenuItem value="price-high">Giá cao</MenuItem>
-          <MenuItem value="popular">Phổ biến</MenuItem>
-        </Select>
-      </Stack>
+
       <MainCard
         title="Sản phẩm"
         secondary={
@@ -314,6 +236,64 @@ export default function ProductsPage() {
           </Button>
         }
       >
+        <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+          <TextField
+            size="small"
+            placeholder="Tìm kiếm sản phẩm..."
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setPage(0);
+            }}
+            sx={{ minWidth: 200 }}
+          />
+          <Select
+            size="small"
+            value={filterCategory}
+            onChange={(e) => {
+              setFilterCategory(e.target.value);
+              setPage(0);
+            }}
+            displayEmpty
+            sx={{ minWidth: 150 }}
+          >
+            <MenuItem value="">Tất cả danh mục</MenuItem>
+            {categories.map((c: any) => (
+              <MenuItem key={c._id} value={c._id}>
+                {c.cName}
+              </MenuItem>
+            ))}
+          </Select>
+          <Select
+            size="small"
+            value={filterStatus}
+            onChange={(e) => {
+              setFilterStatus(e.target.value);
+              setPage(0);
+            }}
+            displayEmpty
+            sx={{ minWidth: 120 }}
+          >
+            <MenuItem value="">Tất cả trạng thái</MenuItem>
+            <MenuItem value="Active">Đang bán</MenuItem>
+            <MenuItem value="Inactive">Ngưng bán</MenuItem>
+          </Select>
+          <Select
+            size="small"
+            value={sortBy}
+            onChange={(e) => {
+              setSortBy(e.target.value);
+              setPage(0);
+            }}
+            sx={{ minWidth: 120 }}
+          >
+            <MenuItem value="newest">Mới nhất</MenuItem>
+            <MenuItem value="oldest">Cũ nhất</MenuItem>
+            <MenuItem value="price-low">Giá thấp</MenuItem>
+            <MenuItem value="price-high">Giá cao</MenuItem>
+            <MenuItem value="popular">Phổ biến</MenuItem>
+          </Select>
+        </Stack>
         {isLoading && <Typography>Đang tải...</Typography>}
         <Table size="small">
           <TableHead>
@@ -330,24 +310,21 @@ export default function ProductsPage() {
               <TableCell>
                 <strong>Giá vốn</strong>
               </TableCell>
-              <TableCell>
-                <strong>Giá so sánh</strong>
-              </TableCell>
+
               <TableCell>
                 <strong>Giảm giá (%)</strong>
               </TableCell>
-              <TableCell>
-                <strong>Khuyến mãi</strong>
-              </TableCell>
+
               <TableCell>
                 <strong>Tồn</strong>
               </TableCell>
               <TableCell>
-                <strong>Danh mục</strong>
+                <strong>Đã bán</strong>
               </TableCell>
               <TableCell>
-                <strong>Phong cách</strong>
+                <strong>Danh mục</strong>
               </TableCell>
+
               <TableCell>
                 <strong>Trạng thái</strong>
               </TableCell>
@@ -392,21 +369,12 @@ export default function ProductsPage() {
                     <TableCell>{row.pName}</TableCell>
                     <TableCell>{formatCurrency(row.pPrice || 0)}</TableCell>
                     <TableCell>{formatCurrency(row.pCost || 0)}</TableCell>
-                    <TableCell>{formatCurrency(row.pComparePrice || 0)}</TableCell>
+
                     <TableCell>{row.pDiscount || 0}</TableCell>
-                    <TableCell>{row.pOffer || ''}</TableCell>
+
                     <TableCell>{row.pQuantity}</TableCell>
+                    <TableCell>{row.pSold || 0}</TableCell>
                     <TableCell>{typeof row.pCategory === 'string' ? row.pCategory : row.pCategory?.cName}</TableCell>
-                    <TableCell>
-                      {row.furniture?.style && row.furniture.style.length > 0 && (
-                        <Stack direction="row" spacing={0.5}>
-                          {row.furniture.style.slice(0, 2).map((s, i) => (
-                            <Chip key={i} label={s} size="small" variant="outlined" />
-                          ))}
-                          {row.furniture.style.length > 2 && <Chip label={`+${row.furniture.style.length - 2}`} size="small" />}
-                        </Stack>
-                      )}
-                    </TableCell>
                     <TableCell>
                       <Chip
                         label={row.pStatus === 'Active' ? 'Đang bán' : 'Ngưng bán'}
@@ -534,17 +502,8 @@ export default function ProductsPage() {
                       onChange={(e) => setForm((f: any) => ({ ...f, pPrice: Number(e.target.value) }))}
                     />
                   </Grid>
-                  <Grid item xs={3}>
-                    <TextField
-                      fullWidth
-                      type="number"
-                      label="Giá so sánh (VND)"
-                      value={form.pComparePrice || 0}
-                      onChange={(e) => setForm((f: any) => ({ ...f, pComparePrice: Number(e.target.value) }))}
-                      placeholder="Giá gốc"
-                    />
-                  </Grid>
-                  <Grid item xs={3}>
+
+                  <Grid item xs={4}>
                     <TextField
                       fullWidth
                       type="number"
@@ -554,7 +513,7 @@ export default function ProductsPage() {
                       placeholder="Giá nhập"
                     />
                   </Grid>
-                  <Grid item xs={3}>
+                  <Grid item xs={4}>
                     <TextField
                       fullWidth
                       type="number"
@@ -583,27 +542,7 @@ export default function ProductsPage() {
                       placeholder="VD: Kệ A, Hàng 1"
                     />
                   </Grid>
-                  <Grid item xs={6}>
-                    <TextField
-                      fullWidth
-                      label="Mô tả khuyến mãi"
-                      value={form.pOffer || ''}
-                      onChange={(e) => setForm((f: any) => ({ ...f, pOffer: e.target.value }))}
-                      placeholder="VD: Giảm 20% cho khách hàng mới"
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      type="datetime-local"
-                      label="Hạn khuyến mãi"
-                      value={form.offerExpiry ? new Date(form.offerExpiry).toISOString().slice(0, 16) : ''}
-                      onChange={(e) =>
-                        setForm((f: any) => ({ ...f, offerExpiry: e.target.value ? new Date(e.target.value).toISOString() : '' }))
-                      }
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  </Grid>
+
                   <Grid item xs={12}>
                     <Typography variant="subtitle1" sx={{ mb: 1 }}>
                       Hình ảnh sản phẩm
@@ -777,6 +716,7 @@ export default function ProductsPage() {
                       placeholder="VD: Gỗ tự nhiên, Vải bền"
                     />
                   </Grid>
+
                   <Grid item xs={6}>
                     <TextField
                       fullWidth
@@ -795,44 +735,9 @@ export default function ProductsPage() {
                       placeholder="VD: Khung sắt, Nệm xốp"
                     />
                   </Grid>
-
-                  {/* Màu sắc */}
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Màu sắc (cách nhau bằng dấu phẩy)"
-                      size="small"
-                      value={form.pColorsText || ''}
-                      onChange={(e) => setForm((f: any) => ({ ...f, pColorsText: e.target.value }))}
-                      placeholder="VD: Đen, Trắng, Xám"
-                    />
-                  </Grid>
-
-                  {/* Phong cách */}
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Phong cách (cách nhau bằng dấu phẩy)"
-                      size="small"
-                      value={form.pStylesText || ''}
-                      onChange={(e) => setForm((f: any) => ({ ...f, pStylesText: e.target.value }))}
-                      placeholder="VD: Hiện đại, Tối giản, Cổ điển"
-                    />
-                  </Grid>
-
-                  {/* Tính năng */}
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Tính năng (cách nhau bằng dấu phẩy)"
-                      size="small"
-                      value={form.pFeaturesText || ''}
-                      onChange={(e) => setForm((f: any) => ({ ...f, pFeaturesText: e.target.value }))}
-                      placeholder="VD: Có thể gập, Có ngăn chứa, Chống nước"
-                    />
-                  </Grid>
                 </Grid>
               </Box>
+
 
               {/* Trạng thái & Hình ảnh */}
               <Box>
@@ -905,14 +810,14 @@ export default function ProductsPage() {
                 </Grid>
               </Box>
             </Box>
-          </DialogContent>
+          </DialogContent >
           <DialogActions>
             <Button onClick={() => setOpen(false)}>Huỷ</Button>
             <Button variant="contained" onClick={handleSave} disabled={isLoading2}>
               {isLoading2 ? 'Đang lưu...' : 'Lưu'}
             </Button>
           </DialogActions>
-        </Dialog>
+        </Dialog >
         <Dialog open={!!confirmId} onClose={() => setConfirmId(null)}>
           <DialogTitle>Xác nhận xoá</DialogTitle>
           <DialogContent>
@@ -930,7 +835,7 @@ export default function ProductsPage() {
             {snack.message}
           </Alert>
         </Snackbar>
-      </MainCard>
+      </MainCard >
     </>
   );
 }

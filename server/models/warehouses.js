@@ -5,6 +5,7 @@ const warehouseSchema = new mongoose.Schema(
   {
     product: { type: ObjectId, ref: "products", required: true, unique: true },
     quantity: { type: Number, required: true, default: 0 },
+    sold: { type: Number, default: 0 },
     location: { type: String, default: null },
     lastUpdated: { type: Date, default: Date.now },
   },

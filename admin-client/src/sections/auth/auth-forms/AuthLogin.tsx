@@ -13,7 +13,9 @@ import Typography from '@mui/material/Typography';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import InputAdornment from '@mui/material/InputAdornment';
 import FormHelperText from '@mui/material/FormHelperText';
+
 import FormControlLabel from '@mui/material/FormControlLabel';
+import { openSnackbar } from 'api/snackbar';
 
 // third-party
 import * as Yup from 'yup';
@@ -67,12 +69,18 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
               preload('api/menu/dashboard', fetcher); // load menu on login success
             }
           } catch (err: any) {
-            console.error(err);
-            if (scriptedRef.current) {
-              setStatus({ success: false });
-              setErrors({ submit: err.message });
-              setSubmitting(false);
-            }
+            openSnackbar({
+              open: true,
+              message: err.message,
+              variant: 'alert',
+              alert: {
+                color: 'error'
+              },
+              close: false
+            } as any);
+            setStatus({ success: false });
+            setErrors({ submit: err.message });
+            setSubmitting(false);
           }
         }}
       >
@@ -157,7 +165,6 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
               </Grid>
               {errors.submit && (
                 <Grid item xs={12}>
-                  <FormHelperText error>{errors.submit}</FormHelperText>
                 </Grid>
               )}
               <Grid item xs={12}>

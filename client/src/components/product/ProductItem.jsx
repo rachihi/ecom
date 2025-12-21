@@ -1,98 +1,116 @@
-import { CheckOutlined } from '@ant-design/icons';
+import { CheckOutlined, EyeOutlined, HeartOutlined, RetweetOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import { ImageLoader } from '@/components/common';
 import { displayMoney } from '@/helpers/utils';
-import { SIGNIN } from '@/constants/routes';
-import PropType from 'prop-types';
+import PropTypes from 'prop-types';
 import React from 'react';
 import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
 import { useHistory } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { addToBasket, removeFromBasket } from '@/redux/actions/basketActions';
 
-const ProductItem = ({ product, isItemOnBasket, addToBasket }) => {
+const ProductItem = ({ product }) => {
   const history = useHistory();
-  const isAuthenticated = useSelector((state) => !!state.profile.id);
+  const dispatch = useDispatch();
+  const basket = useSelector((state) => state.basket);
+  const isItemOnBasket = (id) => !!basket?.find((item) => item.id === id);
 
   const onClickItem = () => {
-    if (!product) return;
-
-    if (product._id) {
-      history.push(`/product/${product._id}`);
+    if (product.id) {
+      history.push(`/product/${product.id}`);
     }
   };
 
-  const itemOnBasket = isItemOnBasket ? isItemOnBasket(product._id) : false;
-
-  const handleAddToBasket = () => {
-    // Require login to add to basket
-    if (!isAuthenticated) {
-      history.push(SIGNIN);
-      return;
+  const onAddToBasket = () => {
+    if (isItemOnBasket(product.id)) {
+      dispatch(removeFromBasket(product.id));
+    } else {
+      dispatch(addToBasket(product));
     }
-
-    if (addToBasket) addToBasket({ ...product, selectedSize: product.sizes[0] });
   };
+
+  const productPrice = product.price || product.pPrice || 0;
+  const productDiscount = product.discount || product.pDiscount || 0;
+  const productOfferPrice = productPrice - (productPrice * (productDiscount / 100));
+  const productColors = product.availableColors || [];
 
   return (
     <SkeletonTheme color="#e1e1e1" highlightColor="#f2f2f2">
       <div
-        className={`product-card ${!product._id ? 'product-loading' : ''}`}
+        className={`product-card ${!product.id ? 'product-loading' : ''}`}
         style={{
-          border: product && itemOnBasket ? '1px solid #a6a5a5' : '',
-          boxShadow: product && itemOnBasket ? '0 10px 15px rgba(0, 0, 0, .07)' : 'none'
+          border: product && isItemOnBasket(product.id) ? '1px solid #a6a5a5' : '',
+          boxShadow: product && isItemOnBasket(product.id) ? '0 10px 15px rgba(0, 0, 0, .07)' : 'none'
         }}
       >
-        {itemOnBasket && <CheckOutlined className="fa fa-check product-card-check" />}
+        {product.id && productDiscount > 0 && (
+          <div className="product-card-badge">
+            <span>Sale</span>
+          </div>
+        )}
+
+        {product.id && (
+          <div className="product-card-actions">
+            <div className="product-action" onClick={onAddToBasket} role="button" tabIndex={0}>
+              {isItemOnBasket(product.id) ? <CheckOutlined style={{ color: 'green' }} /> : <ShoppingCartOutlined />}
+            </div>
+            <div className="product-action" onClick={onClickItem} role="button" tabIndex={0}>
+              <EyeOutlined />
+            </div>
+            <div className="product-action" role="button" tabIndex={0}>
+              <RetweetOutlined />
+            </div>
+          </div>
+        )}
+
         <div
           className="product-card-content"
           onClick={onClickItem}
           role="presentation"
         >
           <div className="product-card-img-wrapper">
-            {product.images ? (
+            {product.image ? (
               <ImageLoader
-                src={product.images?.[0] || ''}
-                alt={product.pName}
+                alt={product.name}
                 className="product-card-img"
+                src={product.image}
               />
             ) : <Skeleton width="100%" height="90%" />}
           </div>
           <div className="product-details">
             <h5 className="product-card-name text-overflow-ellipsis margin-auto">
-              {product.pName || <Skeleton width={80} />}
+              {product.name || <Skeleton width={80} />}
             </h5>
             <p className="product-card-brand">
-              {product?.pCategory?.cName || <Skeleton width={60} />}
+              {product.brand || <Skeleton width={60} />}
             </p>
             <h4 className="product-card-price">
-              {product.price ? displayMoney(product.price) : <Skeleton width={40} />}
+              {product.price ? (
+                productDiscount > 0 ? (
+                  <div className="price-wrapper">
+                    <span className="product-price-new">{displayMoney(productOfferPrice)}</span>
+                    <span className="product-price-old">{displayMoney(productPrice)}</span>
+                  </div>
+                ) : (
+                  <span>{displayMoney(productPrice)}</span>
+                )
+              ) : <Skeleton width={40} />}
             </h4>
+            {productColors.length > 0 && (
+              <div className="product-card-colors" data-count={productColors.length}>
+                {productColors.map((color, index) => (
+                  <div key={index} className="product-color" style={{ backgroundColor: color }}></div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-        {product._id && (
-          <button
-            className={`product-card-button button-small button button-block ${itemOnBasket ? 'button-border button-border-gray' : ''}`}
-            onClick={handleAddToBasket}
-            type="button"
-          >
-            {!isAuthenticated ? 'Sign in to add' : (itemOnBasket ? 'Remove from basket' : 'Add to basket')}
-          </button>
-        )}
-
       </div>
     </SkeletonTheme>
   );
 };
 
-ProductItem.defaultProps = {
-  isItemOnBasket: undefined,
-  addToBasket: undefined
-};
-
 ProductItem.propTypes = {
-  // eslint-disable-next-line react/forbid-prop-types
-  product: PropType.object.isRequired,
-  isItemOnBasket: PropType.func,
-  addToBasket: PropType.func
+  product: PropTypes.object.isRequired
 };
 
 export default ProductItem;

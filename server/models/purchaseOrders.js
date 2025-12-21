@@ -15,6 +15,7 @@ const purchaseOrderSchema = new mongoose.Schema(
     orderCode: { type: String, unique: true }, // Mã đơn hàng tự động (PO-YYYYMMDD-XXXX)
     supplier: { type: ObjectId, ref: "suppliers", required: true },
     items: [purchaseOrderItemSchema], // DEPRECATED: Keep for backward compatibility, use purchaseorderdetails table instead
+    totalQuantity: { type: Number, default: 0 },
     totalAmount: { type: Number, required: true },
     status: { type: String, enum: ["Pending", "Completed", "Cancelled"], default: "Pending" }, // Đang giao dịch, Hoàn thành, Hủy
     warehouseStatus: { type: String, enum: ["NotReceived", "Received"], default: "NotReceived" }, // Chưa nhập, Đã nhập

@@ -41,8 +41,6 @@ const paymentsRouter = require("./routes/payments");
 const uploadRoutes = require("./routes/uploads");
 const cashbookRouter = require("./routes/cashbook");
 // Import Auth middleware for check user login or not~
-const posRouter = require("./routes/pos");
-
 const { loginCheck } = require("./middleware/auth");
 const CreateAllFolder = require("./config/uploadFolderCreateScript");
 const swaggerUi = require("swagger-ui-express");
@@ -86,7 +84,6 @@ app.use("/api/customize", customizeRouter);
 app.use("/api/customers", customersRouter);
 app.use("/api/warehouse", warehouseRouter);
 app.use("/api/suppliers", suppliersRouter);
-app.use("/api/pos", posRouter);
 
 app.use("/api/purchase-orders", purchaseOrdersRouter);
 app.use("/api/payments", paymentsRouter);

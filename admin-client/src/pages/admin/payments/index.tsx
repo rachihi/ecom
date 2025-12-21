@@ -31,7 +31,7 @@ export default function PaymentsPage() {
   const { data, mutate, isLoading } = useSWR(key);
   const rows: PaymentRow[] = useMemo(() => data?.payments || [], [data]);
 
-  const [snack, setSnack] = useState<{open:boolean, message:string, severity:'success'|'error'}>({ open:false, message:'', severity:'success' });
+  const [snack, setSnack] = useState<{ open: boolean, message: string, severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
 
   const labelId = type === 'order' ? 'Mã đơn hàng' : 'Mã nhập hàng';
   const summaryLabel = type === 'order' ? 'Còn lại cần thu' : 'Còn lại cần trả';
@@ -39,7 +39,17 @@ export default function PaymentsPage() {
   return (
     <MainCard title={'Thanh toán'}>
       <Stack spacing={2}>
-        <Stack direction="row" spacing={1} alignItems="center">
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+          <TextField
+            size="small"
+            placeholder="Tìm kiếm..."
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setPage(0);
+            }}
+            sx={{ minWidth: 200 }}
+          />
           <Select size="small" value={type} onChange={(e) => { setType(e.target.value as PayType); setRefId(''); }}>
             <MenuItem value="order">Đơn hàng (Thu)</MenuItem>
             <MenuItem value="purchase">Nhập hàng (Chi)</MenuItem>
@@ -79,23 +89,21 @@ export default function PaymentsPage() {
           </TableBody>
         </Table>
 
-        <Stack direction="row" spacing={1} alignItems="center">
-          <TextField size="small" label="Tìm kiếm" value={q} onChange={(e)=>{ setQ(e.target.value); setPage(0); }} sx={{ width: 300 }} />
-        </Stack>
+
         <Stack alignItems="flex-end">
           <TablePagination
             component="div"
             count={data?.total || 0}
             page={page}
-            onPageChange={(_e, newPage)=> setPage(newPage)}
+            onPageChange={(_e, newPage) => setPage(newPage)}
             rowsPerPage={limit}
-            onRowsPerPageChange={(e)=>{ setLimit(parseInt(e.target.value, 10)); setPage(0); }}
-            rowsPerPageOptions={[5,10,20,50]}
+            onRowsPerPageChange={(e) => { setLimit(parseInt(e.target.value, 10)); setPage(0); }}
+            rowsPerPageOptions={[5, 10, 20, 50]}
           />
         </Stack>
       </Stack>
-      <Snackbar open={snack.open} autoHideDuration={3000} onClose={()=>setSnack((s)=>({...s, open:false}))}>
-        <Alert onClose={()=>setSnack((s)=>({...s, open:false}))} severity={snack.severity} sx={{ width: '100%' }}>
+      <Snackbar open={snack.open} autoHideDuration={3000} onClose={() => setSnack((s) => ({ ...s, open: false }))}>
+        <Alert onClose={() => setSnack((s) => ({ ...s, open: false }))} severity={snack.severity} sx={{ width: '100%' }}>
           {snack.message}
         </Alert>
       </Snackbar>

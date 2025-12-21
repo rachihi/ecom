@@ -1,4 +1,5 @@
 import { lazy } from 'react';
+import { Navigate } from 'react-router-dom';
 
 // project-imports
 import Loadable from 'components/Loadable';
@@ -43,6 +44,10 @@ const MainRoutes = {
         </AuthGuard>
       ),
       children: [
+        {
+          index: true,
+          element: <Navigate to="/admin/orders" />
+        },
         {
           path: 'sample-page',
           element: <SamplePage />
@@ -90,8 +95,7 @@ const MainRoutes = {
           element: <MaintenanceComingSoon />
         }
       ]
-    },
-    { path: '*', element: <MaintenanceError /> }
+    }
   ]
 };
 

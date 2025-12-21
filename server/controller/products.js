@@ -66,7 +66,7 @@ class Product {
             sortOption = { createdAt: 1 };
             break;
           case "popular":
-            sortOption = { pSold: -1 };
+            sortOption = { "warehouse.sold": -1 };
             break;
           case "price-low":
           case "price-asc":
@@ -81,17 +81,50 @@ class Product {
         }
       }
 
-      const total = await productModel.countDocuments(filter);
-      const productsRaw = await productModel
-        .find(filter)
-        .populate("pCategory", "_id cName")
-        .sort(sortOption)
-        .skip((page - 1) * limit)
-        .limit(limit);
+      // Aggregation Pipeline
+      const pipeline = [
+        { $match: filter },
+        {
+          $lookup: {
+            from: "warehouses",
+            localField: "_id",
+            foreignField: "product",
+            as: "warehouse",
+          },
+        },
+        {
+          $unwind: {
+            path: "$warehouse",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $addFields: {
+            pQuantity: { $ifNull: ["$warehouse.quantity", 0] },
+            pSold: { $ifNull: ["$warehouse.sold", 0] },
+          },
+        },
+        {
+          $lookup: {
+            from: "categories",
+            localField: "pCategory",
+            foreignField: "_id",
+            as: "pCategory"
+          }
+        },
+        { $unwind: "$pCategory" }, // Populate category
+        { $sort: sortOption },
+        { $skip: (page - 1) * limit },
+        { $limit: limit },
+      ];
 
-      // Keep images as stored (base64 array or filenames)
+      const productsRaw = await productModel.aggregate(pipeline);
+      const total = await productModel.countDocuments(filter);
+
+      // Keep images as stored
       const products = productsRaw.map((p) => ({
-        ...p.toObject()
+        ...p,
+        id: p._id // Ensure id field presence if needed
       }));
 
       return res.json({
@@ -120,11 +153,16 @@ class Product {
 
       const product = await productModel
         .findById(pId)
-        .populate("pCategory", "_id cName");
+        .populate("pCategory", "_id cName")
+        .lean();
 
       if (!product) {
         return res.status(404).json({ error: "Product not found" });
       }
+
+      const warehouse = await warehouseModel.findOne({ product: pId });
+      product.pQuantity = warehouse ? warehouse.quantity : 0;
+      product.pSold = warehouse ? warehouse.sold : 0;
 
       await productModel.findByIdAndUpdate(pId, { $inc: { view_count: 1 } });
 
@@ -160,7 +198,7 @@ class Product {
       } = req.body;
 
 
-      if (!pName || !pDescription || !pPrice || !pQuantity || !pCategory || !pStatus) {
+      if (!pName || !pDescription || !pPrice || !pCategory || !pStatus) {
         return res.json({ error: "All required fields must be filled" });
       }
 
@@ -174,36 +212,6 @@ class Product {
       if (furniture) {
         try {
           furnitureData = typeof furniture === "string" ? JSON.parse(furniture) : furniture;
-          // Ensure colors is array of objects { colorName }
-          if (furnitureData.colors) {
-            if (typeof furnitureData.colors === 'string') {
-              // Split string to array
-              furnitureData.colors = furnitureData.colors.split(',').map(c => c.trim()).filter(c => c).map(c => ({ colorName: c }));
-            } else if (Array.isArray(furnitureData.colors)) {
-              // If array of strings, convert to array of objects
-              furnitureData.colors = furnitureData.colors.map(c => {
-                if (typeof c === 'string') return { colorName: c };
-                if (typeof c === 'object' && c.colorName) return c;
-                return null;
-              }).filter(Boolean);
-            } else {
-              furnitureData.colors = [];
-            }
-          }
-          if (furnitureData.style && !Array.isArray(furnitureData.style)) {
-            if (typeof furnitureData.style === 'string') {
-              furnitureData.style = furnitureData.style.split(',').map(s => s.trim()).filter(s => s);
-            } else {
-              furnitureData.style = [];
-            }
-          }
-          if (furnitureData.features && !Array.isArray(furnitureData.features)) {
-            if (typeof furnitureData.features === 'string') {
-              furnitureData.features = furnitureData.features.split(',').map(f => f.trim()).filter(f => f);
-            } else {
-              furnitureData.features = [];
-            }
-          }
         } catch (e) {
           console.warn("Could not parse furniture data");
         }
@@ -214,7 +222,7 @@ class Product {
         pDescription,
         pShortDescription,
         pPrice,
-        pQuantity,
+        // pQuantity removed from here
         pCategory,
         discount: discount || pDiscount || 0,
         pDiscount: discount || pDiscount || 0,
@@ -237,12 +245,14 @@ class Product {
       await warehouseModel.findOneAndUpdate(
         { product: savedProduct._id },
         {
-          quantity: pQuantity,
+          quantity: pQuantity || 0,
+          sold: 0,
           location: location,
           lastUpdated: Date.now()
         },
         { upsert: true }
       );
+
 
       return res.json({
         success: "Product created successfully",
@@ -317,36 +327,6 @@ class Product {
       if (furniture) {
         try {
           let furnitureData = typeof furniture === "string" ? JSON.parse(furniture) : furniture;
-          // Ensure colors is array of objects { colorName }
-          if (furnitureData.colors) {
-            if (typeof furnitureData.colors === 'string') {
-              furnitureData.colors = furnitureData.colors.split(',').map(c => c.trim()).filter(c => c).map(c => ({ colorName: c }));
-            } else if (Array.isArray(furnitureData.colors)) {
-              furnitureData.colors = furnitureData.colors.map(c => {
-                if (typeof c === 'string') return { colorName: c };
-                if (typeof c === 'object' && c.colorName) return c;
-                return null;
-              }).filter(Boolean);
-            } else {
-              furnitureData.colors = [];
-            }
-          }
-          // Ensure style is array of strings
-          if (furnitureData.style && !Array.isArray(furnitureData.style)) {
-            if (typeof furnitureData.style === 'string') {
-              furnitureData.style = furnitureData.style.split(',').map(s => s.trim()).filter(s => s);
-            } else {
-              furnitureData.style = [];
-            }
-          }
-          // Ensure features is array of strings
-          if (furnitureData.features && !Array.isArray(furnitureData.features)) {
-            if (typeof furnitureData.features === 'string') {
-              furnitureData.features = furnitureData.features.split(',').map(f => f.trim()).filter(f => f);
-            } else {
-              furnitureData.features = [];
-            }
-          }
           updateData.furniture = furnitureData;
         } catch (e) {
           console.warn("Could not parse furniture data");
@@ -376,6 +356,7 @@ class Product {
   static async getDeleteProduct(req, res) {
     try {
       const { pId } = req.body;
+      const warehouseModel = require("../models/warehouses"); // Import warehouse model
 
       if (!pId) {
         return res.json({ error: "Product ID required" });
@@ -395,6 +376,8 @@ class Product {
         }
       }
 
+      // Delete associated warehouse data
+      await warehouseModel.deleteOne({ product: pId });
       await productModel.findByIdAndDelete(pId);
 
       return res.json({ success: "Product deleted successfully" });
@@ -536,7 +519,23 @@ class Product {
   static async getBestsellers(req, res) {
     try {
       const limit = parseInt(req.query.limit) || 12;
-      const products = await productModel.findBestsellers(limit);
+      // Use aggregation for bestsellers
+      const products = await productModel.aggregate([
+        { $match: { pStatus: "active", isBestseller: true } },
+        {
+          $lookup: {
+            from: "warehouses",
+            localField: "_id",
+            foreignField: "product",
+            as: "warehouse",
+          },
+        },
+        {
+          $unwind: { path: "$warehouse", preserveNullAndEmptyArrays: true }
+        },
+        { $sort: { "warehouse.sold": -1 } },
+        { $limit: limit }
+      ]);
       return res.json({ success: true, data: products });
     } catch (err) {
       console.error(err);

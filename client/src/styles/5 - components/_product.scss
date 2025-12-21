@@ -61,11 +61,100 @@
 
   &:hover {
     cursor: pointer;
+
+    .product-card-actions {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
 
   @include mobile {
     height: 200px;
   }
+}
+
+.product-card-badge {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background: #ffcccc;
+  color: #ff4d4f;
+  border-radius: 15px;
+  padding: 2px 10px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  z-index: 2;
+}
+
+.product-card-actions {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 2;
+  opacity: 0;
+  transform: translateX(20px);
+  transition: all 0.3s ease;
+
+  @include mobile {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.product-action {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #333;
+
+  &:hover {
+    background: #ff4d4f;
+    color: white;
+  }
+}
+
+.product-card-colors {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.product-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin: 0 4px;
+  border: 1px solid #ddd;
+  cursor: pointer;
+}
+
+.price-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.product-price-new {
+  color: #000;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.product-price-old {
+  color: #999;
+  text-decoration: line-through;
+  font-size: 0.9rem;
 }
 
 .product-card:hover .product-card-content {
@@ -525,8 +614,11 @@
 
 .product-display {
   width: 100%;
-  max-height: 30rem;
+  max-height: unset; // Override max-height from anywhere if set
+  height: auto; // Override fixed height from .product-card
+  max-width: unset; // Override max-width from .product-card
   border: 1px solid $border-color;
+  text-align: left; // Featured products often look better left-aligned or unset center
 
   &:hover {
     cursor: pointer;
@@ -534,7 +626,19 @@
     .product-display-img img {
       transform: scale(1.1);
     }
+
+    // Ensure actions appear for this too
+    .product-card-actions {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
+}
+
+// Override specific internal parts if needed
+.product-display .product-card-img-wrapper {
+  height: auto; // Don't use small card height
+  width: 100%;
 }
 
 .product-display-img {

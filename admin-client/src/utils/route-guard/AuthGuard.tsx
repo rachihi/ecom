@@ -25,5 +25,5 @@ export default function AuthGuard({ children }: GuardProps) {
     }
   }, [isLoggedIn, navigate, location]);
 
-  return children;
+  return isLoggedIn ? children : null;
 }

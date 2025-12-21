@@ -4,7 +4,7 @@ import axios from 'utils/axios';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@mui/material';
 import MainCard from 'components/MainCard';
 
-interface WarehouseRow { _id: string; product: any; quantity: number; location?: string; lastUpdated?: string }
+interface WarehouseRow { _id: string; product: any; quantity: number; sold?: number; location?: string; lastUpdated?: string }
 
 export default function WarehousePage() {
   const { data, mutate, isLoading } = useSWR('/api/warehouse');
@@ -26,6 +26,7 @@ export default function WarehousePage() {
           <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
             <TableCell><strong>Sản phẩm</strong></TableCell>
             <TableCell><strong>Tồn</strong></TableCell>
+            <TableCell><strong>Đã bán</strong></TableCell>
             <TableCell><strong>Vị trí</strong></TableCell>
             <TableCell><strong>Cập nhật</strong></TableCell>
             <TableCell align="right"><strong>Hành động</strong></TableCell>
@@ -36,6 +37,7 @@ export default function WarehousePage() {
             <TableRow key={r._id} hover>
               <TableCell>{typeof r.product === 'string' ? r.product : r.product?.pName}</TableCell>
               <TableCell>{r.quantity}</TableCell>
+              <TableCell>{r.sold || 0}</TableCell>
               <TableCell>{r.location}</TableCell>
               <TableCell>{r.lastUpdated && new Date(r.lastUpdated).toLocaleString()}</TableCell>
               <TableCell align="right"><Button size="small" onClick={() => openAdjust(r)}>Điều chỉnh</Button></TableCell>

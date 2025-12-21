@@ -43,14 +43,14 @@ const furnitureProductSchema = new mongoose.Schema(
     },
 
 
-      // ===========================
-      // ẢNH SẢN PHẨM (LƯU MẢNG STRING FILENAME)
-      images: [
-        {
-          type: String,
-          // filename or base64 string
-        }
-      ],
+    // ===========================
+    // ẢNH SẢN PHẨM (LƯU MẢNG STRING FILENAME)
+    images: [
+      {
+        type: String,
+        // filename or base64 string
+      }
+    ],
     // ===========================
     // GIÁ VÀ KHUYẾN MÃI
     // ===========================
@@ -133,31 +133,6 @@ const furnitureProductSchema = new mongoose.Schema(
         filling: String,       // Chất nhân (ghế/sofa)
       },
 
-      // Màu sắc & Biến thể
-      colors: [
-        {
-          colorName: String,
-          colorCode: String,   // Hex code
-          colorImage: String,
-          available: {
-            type: Boolean,
-            default: true,
-          },
-          stock: {
-            type: Number,
-            default: 0,
-          },
-        },
-      ],
-
-      // Phong cách
-      style: [String],
-      // ["Hiện đại", "Tối giản", "Vintage", "Cổ điển", ...]
-
-      // Tính năng đặc biệt
-      features: [String],
-      // ["Có ngăn kéo", "Xoay", "Kéo rộng", ...]
-
       // Trọng lượng & Kích thước vận chuyển
       weight: Number,         // kg
       maxWeight: Number,      // Trọng lượng tối đa
@@ -175,29 +150,14 @@ const furnitureProductSchema = new mongoose.Schema(
     // ===========================
     // HÌNH ẢNH
     // ===========================
-      // ===========================
-      // HÌNH ẢNH (DEPRECATED FIELDS)
-      pImages: [String],         // Array filenames for compatibility
-      thumbnailImage: String,
+    // ===========================
+    // HÌNH ẢNH (DEPRECATED FIELDS)
+    pImages: [String],         // Array filenames for compatibility
+    thumbnailImage: String,
     // ===========================
     // TÌNH TRẠNG & TỒN KHO
     // ===========================
-    pQuantity: {
-      type: Number,
-      default: 0,
-      min: 0,
-      index: true,
-    },
-    pReorder: {
-      type: Number,
-      default: 20,
-      // Mức tồn kho cảnh báo
-    },
-    pSold: {
-      type: Number,
-      default: 0,
-      // Số lượng bán được
-    },
+
     pStatus: {
       type: String,
       enum: ["active", "inactive", "discontinued", "draft", "Active", "Inactive"],
@@ -314,7 +274,6 @@ const furnitureProductSchema = new mongoose.Schema(
 furnitureProductSchema.index({
   pName: "text",
   pDescription: "text",
-  "furniture.style": "text",
 });
 furnitureProductSchema.index({ pCategory: 1, pStatus: 1 });
 furnitureProductSchema.index({ isFeatured: 1, isRecommended: 1, pStatus: 1 });
@@ -398,11 +357,7 @@ furnitureProductSchema.pre("save", function (next) {
 // ===========================
 // STATIC METHODS
 // ===========================
-furnitureProductSchema.statics.findBestsellers = function (limit = 10) {
-  return this.find({ pStatus: "active", isBestseller: true })
-    .sort({ pSold: -1 })
-    .limit(limit);
-};
+
 
 furnitureProductSchema.statics.findNewProducts = function (limit = 10, days = 30) {
   const date = new Date();

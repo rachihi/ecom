@@ -62,7 +62,16 @@ export default function CategoriesPage() {
     <MainCard title={'Danh mục'} secondary={<Button variant="contained" onClick={handleOpenCreate}>{'Thêm danh mục'}</Button>}>
       <Stack spacing={2}>
         <Stack direction="row" spacing={1}>
-          <TextField size="small" label="Tìm kiếm" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} sx={{ width: 300 }} />
+          <TextField
+            size="small"
+            placeholder="Tìm kiếm danh mục..."
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setPage(0);
+            }}
+            sx={{ minWidth: 200 }}
+          />
         </Stack>
         {isLoading && <Typography>{'Đang tải...'}</Typography>}
         <Table size="small">
@@ -120,6 +129,6 @@ export default function CategoriesPage() {
           <Button onClick={handleSave} variant="contained">{'Lưu'}</Button>
         </DialogActions>
       </Dialog>
-    </MainCard>
+    </MainCard >
   );
 }

@@ -88,10 +88,13 @@ class PurchaseOrdersController {
       });
       const orderCode = `PO-${dateStr}-${String(count + 1).padStart(4, '0')}`;
 
+      const totalQuantity = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+
       const created = await new purchaseOrderModel({
         orderCode,
         supplier,
         items: [], // Keep empty, use purchaseorderdetails table
+        totalQuantity,
         totalAmount,
         status: "Pending",
         warehouseStatus: "NotReceived",
@@ -168,6 +171,7 @@ class PurchaseOrdersController {
 
       // Update details if items provided
       if (items !== undefined && Array.isArray(items)) {
+        po.totalQuantity = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
         // Delete old details
         await purchaseOrderDetailModel.deleteMany({ purchaseOrder: id });
 
@@ -220,7 +224,8 @@ class PurchaseOrdersController {
           { $inc: { quantity: detail.quantity }, lastUpdated: Date.now() },
           { upsert: true }
         );
-        await productModel.findByIdAndUpdate(detail.productId, { $inc: { pQuantity: detail.quantity } });
+        // pQuantity removed from productModel
+
       }
 
       po.warehouseStatus = "Received";

@@ -54,37 +54,31 @@ export default function CashbookPage() {
   return (
     <MainCard title={'Sổ quỹ'}>
       <Stack spacing={2}>
-        <Grid container spacing={2}>
-          <Grid item>
-            <TextField
-              type="date"
-              label="Từ ngày"
-              size="small"
-              InputLabelProps={{ shrink: true }}
-              value={from}
-              onChange={(e) => { setFrom(e.target.value); setPage(0); }}
-            />
-          </Grid>
-          <Grid item>
-            <TextField
-              type="date"
-              label="Đến ngày"
-              size="small"
-              InputLabelProps={{ shrink: true }}
-              value={to}
-              onChange={(e) => { setTo(e.target.value); setPage(0); }}
-            />
-          </Grid>
-          <Grid item>
-            <TextField
-              size="small"
-              label="Tìm kiếm"
-              value={q}
-              onChange={(e) => { setQ(e.target.value); setPage(0); }}
-              sx={{ width: 250 }}
-            />
-          </Grid>
-        </Grid>
+        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+          <TextField
+            size="small"
+            placeholder="Tìm kiếm..."
+            value={q}
+            onChange={(e) => { setQ(e.target.value); setPage(0); }}
+            sx={{ minWidth: 200 }}
+          />
+          <TextField
+            type="date"
+            label="Từ ngày"
+            size="small"
+            InputLabelProps={{ shrink: true }}
+            value={from}
+            onChange={(e) => { setFrom(e.target.value); setPage(0); }}
+          />
+          <TextField
+            type="date"
+            label="Đến ngày"
+            size="small"
+            InputLabelProps={{ shrink: true }}
+            value={to}
+            onChange={(e) => { setTo(e.target.value); setPage(0); }}
+          />
+        </Stack>
 
         <Box>
           <Typography variant="subtitle1">Tổng hợp</Typography>
