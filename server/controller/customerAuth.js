@@ -174,6 +174,101 @@ class CustomerAuth {
       return res.status(500).json({ error: "Internal server error" });
     }
   }
+
+  /**
+   * Upload Avatar
+   * POST /api/customer/upload-avatar
+   * Headers: Authorization: Bearer <token>
+   * form-data: avatar: file
+   */
+  async uploadAvatar(req, res) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No image provided" });
+      }
+      return res.json({
+        success: true,
+        url: req.file.filename
+      });
+    } catch (err) {
+      console.error("Upload avatar error:", err);
+      return res.status(500).json({ error: "Image upload failed" });
+    }
+  }
+
+  /**
+   * Update Customer Profile
+   * PUT /api/customer/profile
+   * Headers: Authorization: Bearer <token>
+   * Body: { fullName, phoneNumber, address, avatar (string) }
+   */
+  async updateProfile(req, res) {
+    try {
+      const customerId = req.customerDetails._id;
+      const { fullName, phoneNumber, address, avatar } = req.body;
+      // const avatar = req.file ? req.file.filename : undefined; // REMOVED
+
+      const updateData = {};
+      if (fullName) updateData.fullName = fullName;
+      if (phoneNumber) updateData.phoneNumber = phoneNumber;
+      if (address) updateData.address = address;
+      if (avatar) updateData.avatar = avatar;
+
+      const updatedCustomer = await customerModel.findByIdAndUpdate(
+        customerId,
+        updateData,
+        { new: true }
+      ).select("-password");
+
+      if (!updatedCustomer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+
+      return res.json({
+        success: true,
+        customer: updatedCustomer,
+      });
+    } catch (err) {
+      console.error("Update profile error:", err);
+      return res.status(500).json({ error: err.message || "Internal server error" });
+    }
+  }
+
+  /**
+   * Change Password
+   * POST /api/customer/change-password
+   * Headers: Authorization: Bearer <token>
+   * Body: { currentPassword, newPassword }
+   */
+  async changePassword(req, res) {
+    try {
+      const customerId = req.customerDetails._id;
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ error: "All fields are required" });
+      }
+
+      const customer = await customerModel.findById(customerId);
+      if (!customer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+
+      const isMatch = await bcrypt.compare(currentPassword, customer.password);
+      if (!isMatch) {
+        return res.status(400).json({ error: "Incorrect current password" });
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      customer.password = hashedPassword;
+      await customer.save();
+
+      return res.json({ success: true, message: "Password updated successfully" });
+    } catch (err) {
+      console.error("Change password error:", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
 }
 
 const customerAuthController = new CustomerAuth();

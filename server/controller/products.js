@@ -7,6 +7,7 @@ const productModel = require("../models/products");
 const warehouseModel = require("../models/warehouses");
 const fs = require("fs");
 const path = require("path");
+const mongoose = require("mongoose");
 
 class Product {
 
@@ -20,7 +21,7 @@ class Product {
       const limit = Math.min(parseInt(req.query.limit) || 12, 100);
       const search = (req.query.search || req.query.q || "").trim();
 
-      let filter = { pStatus: { $in: ["active", "Active"] } };
+      let filter = {};
 
       if (search) {
         filter.$or = [
@@ -30,8 +31,8 @@ class Product {
         ];
       }
 
-      if (req.query.category) {
-        filter.pCategory = req.query.category;
+      if (req.query.category && mongoose.Types.ObjectId.isValid(req.query.category)) {
+        filter.pCategory = new mongoose.Types.ObjectId(req.query.category);
       }
 
       if (req.query.status) {
@@ -112,7 +113,12 @@ class Product {
             as: "pCategory"
           }
         },
-        { $unwind: "$pCategory" }, // Populate category
+        {
+          $unwind: {
+            path: "$pCategory",
+            preserveNullAndEmptyArrays: true
+          }
+        },
         { $sort: sortOption },
         { $skip: (page - 1) * limit },
         { $limit: limit },
@@ -120,6 +126,19 @@ class Product {
 
       const productsRaw = await productModel.aggregate(pipeline);
       const total = await productModel.countDocuments(filter);
+
+      const priceStats = await productModel.aggregate([
+        { $match: { pStatus: 'Active' } },
+        {
+          $group: {
+            _id: null,
+            min: { $min: "$pPrice" },
+            max: { $max: "$pPrice" }
+          }
+        }
+      ]);
+      const minPrice = priceStats.length > 0 ? priceStats[0].min : 0;
+      const maxPrice = priceStats.length > 0 ? priceStats[0].max : 0;
 
       // Keep images as stored
       const products = productsRaw.map((p) => ({
@@ -136,6 +155,8 @@ class Product {
           limit,
           pages: Math.ceil(total / limit),
         },
+        minPrice,
+        maxPrice
       });
     } catch (err) {
       console.error(err);
@@ -203,7 +224,7 @@ class Product {
       }
 
 
-      let images = req.body.image
+      let images = req.body.images;
 
       const thumbnailImage = req.body.images.length > 0 ? req.body.images[0] : undefined;
 

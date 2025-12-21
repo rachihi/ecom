@@ -11,7 +11,7 @@ import { Link } from 'react-router-dom';
 
 
 const Home = () => {
-  useDocumentTitle('Salinaka | Home');
+  useDocumentTitle('Bá Minh Store | Home');
   useScrollTop();
 
   const {
@@ -33,17 +33,17 @@ const Home = () => {
         <div className="banner">
           <div className="banner-desc">
             <h1 className="text-thin">
-              <strong>See</strong>
-              &nbsp;everything with&nbsp;
-              <strong>Clarity</strong>
+              <strong>Không gian</strong>
+              &nbsp;sống hoàn hảo với&nbsp;
+              <strong>Bá Minh</strong>
             </h1>
             <p>
-              Buying eyewear should leave you happy and good-looking, with money in your pocket.
-              Glasses, sunglasses, and contacts—we’ve got your eyes covered.
+              Kiến tạo không gian sống sang trọng và tiện nghi với nội thất tinh tế.
+              Từ sofa, bàn ăn đến giường ngủ - chúng tôi mang đến sự thoải mái và phong cách cho ngôi nhà của bạn.
             </p>
             <br />
             <Link to={SHOP} className="button">
-              Shop Now &nbsp;
+              Mua ngay &nbsp;
               <ArrowRightOutlined />
             </Link>
           </div>
@@ -51,14 +51,14 @@ const Home = () => {
         </div>
         <div className="display">
           <div className="display-header">
-            <h1>Featured Products</h1>
-            <Link to={FEATURED_PRODUCTS}>See All</Link>
+            <h1>Sản phẩm nổi bật</h1>
+            <Link to={FEATURED_PRODUCTS}>Xem tất cả</Link>
           </div>
           {(errorFeatured && !isLoadingFeatured) ? (
             <MessageDisplay
               message={errorFeatured}
               action={fetchFeaturedProducts}
-              buttonLabel="Try Again"
+              buttonLabel="Thử lại"
             />
           ) : (
             <ProductShowcaseGrid
@@ -69,14 +69,14 @@ const Home = () => {
         </div>
         <div className="display">
           <div className="display-header">
-            <h1>Recommended Products</h1>
-            <Link to={RECOMMENDED_PRODUCTS}>See All</Link>
+            <h1>Sản phẩm đề xuất</h1>
+            <Link to={RECOMMENDED_PRODUCTS}>Xem tất cả</Link>
           </div>
           {(errorRecommended && !isLoadingRecommended) ? (
             <MessageDisplay
               message={errorRecommended}
               action={fetchRecommendedProducts}
-              buttonLabel="Try Again"
+              buttonLabel="Thử lại"
             />
           ) : (
             <ProductShowcaseGrid

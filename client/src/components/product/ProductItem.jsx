@@ -1,4 +1,4 @@
-import { CheckOutlined, EyeOutlined, HeartOutlined, RetweetOutlined, ShoppingCartOutlined } from '@ant-design/icons';
+import { CheckOutlined, EyeOutlined, HeartOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import { ImageLoader } from '@/components/common';
 import { displayMoney } from '@/helpers/utils';
 import PropTypes from 'prop-types';
@@ -34,7 +34,7 @@ const ProductItem = ({ product }) => {
   const productColors = product.availableColors || [];
 
   return (
-    <SkeletonTheme color="#e1e1e1" highlightColor="#f2f2f2">
+    <SkeletonTheme color="#ffffff" highlightColor="#fcfcfc">
       <div
         className={`product-card ${!product.id ? 'product-loading' : ''}`}
         style={{
@@ -44,7 +44,7 @@ const ProductItem = ({ product }) => {
       >
         {product.id && productDiscount > 0 && (
           <div className="product-card-badge">
-            <span>Sale</span>
+            <span>Giảm giá</span>
           </div>
         )}
 
@@ -56,9 +56,7 @@ const ProductItem = ({ product }) => {
             <div className="product-action" onClick={onClickItem} role="button" tabIndex={0}>
               <EyeOutlined />
             </div>
-            <div className="product-action" role="button" tabIndex={0}>
-              <RetweetOutlined />
-            </div>
+
           </div>
         )}
 

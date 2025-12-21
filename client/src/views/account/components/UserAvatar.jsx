@@ -69,7 +69,7 @@ const UserNav = () => {
             to={ACCOUNT}
             className="user-nav-sub-link"
           >
-            View Account
+            Tài khoản
             <UserOutlined />
           </Link>
         )}
@@ -78,7 +78,7 @@ const UserNav = () => {
           onClick={() => dispatch(signOut())}
           role="presentation"
         >
-          Sign Out
+          Đăng xuất
           <LogoutOutlined />
         </h6>
       </div>

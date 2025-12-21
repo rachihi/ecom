@@ -11,7 +11,7 @@ import { StepTracker } from '../components';
 import withCheckout from '../hoc/withCheckout';
 
 const OrderSummary = ({ basket, subtotal }) => {
-  useDocumentTitle('Check Out Step 1 | Salinaka');
+  useDocumentTitle('Check Out Step 1 | Bá Minh Store');
   useScrollTop();
   const dispatch = useDispatch();
   const history = useHistory();
@@ -22,8 +22,8 @@ const OrderSummary = ({ basket, subtotal }) => {
     <div className="checkout">
       <StepTracker current={1} />
       <div className="checkout-step-1">
-        <h3 className="text-center">Order Summary</h3>
-        <span className="d-block text-center">Review items in your basket.</span>
+        <h3 className="text-center">Chi tiết đơn hàng</h3>
+        <span className="d-block text-center">Kiểm tra lại sản phẩm trong giỏ hàng.</span>
         <br />
         <div className="checkout-items">
           {basket.map((product) => (
@@ -37,7 +37,7 @@ const OrderSummary = ({ basket, subtotal }) => {
         </div>
         <br />
         <div className="basket-total text-right">
-          <p className="basket-total-title">Subtotal:</p>
+          <p className="basket-total-title">Tổng tiền:</p>
           <h2 className="basket-total-amount">{displayMoney(subtotal)}</h2>
         </div>
         <br />
@@ -49,14 +49,14 @@ const OrderSummary = ({ basket, subtotal }) => {
           >
             <ShopOutlined />
             &nbsp;
-            Continue Shopping
+            Tiếp tục mua hàng
           </button>
           <button
             className="button"
             onClick={onClickNext}
             type="submit"
           >
-            Next Step
+            Bước tiếp theo
             &nbsp;
             <ArrowRightOutlined />
           </button>

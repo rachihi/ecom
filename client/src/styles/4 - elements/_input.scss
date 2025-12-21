@@ -35,10 +35,12 @@ input[type=tel] {
 input[type=number] {
   -moz-appearance: textfield;
 }
+
 input[type=number]::-webkit-outer-spin-button,
 input[type=number]::-webkit-inner-spin-button {
   -webkit-appearance: none;
 }
+
 input[type=number]:invalid,
 input[type=number]:out-of-range {
   border: 2px solid #ff6347;
@@ -59,8 +61,8 @@ input[type=radio] {
   cursor: pointer;
 }
 
-input[type=checkbox] + label,
-input[type=radio] + label {
+input[type=checkbox]+label,
+input[type=radio]+label {
   font-size: $font-medium;
   background: none;
   border: none;
@@ -70,9 +72,9 @@ input[type=radio] + label {
 }
 
 
-input[type=checkbox] + label:before,
-input[type=radio] + label:before {
-  content:'';
+input[type=checkbox]+label:before,
+input[type=radio]+label:before {
+  content: '';
   -webkit-appearance: none;
   background-color: $white;
   border: 2px solid $border-color-focus;
@@ -87,8 +89,8 @@ input[type=radio] + label:before {
   transition: all .3s ease;
 }
 
-input[type=checkbox] + label:after,
-input[type=radio] + label:after {
+input[type=checkbox]+label:after,
+input[type=radio]+label:after {
   content: '';
   display: block;
   position: absolute;
@@ -104,19 +106,19 @@ input[type=radio] + label:after {
   transition: all .3s ease;
 }
 
-input[type=checkbox]:hover + label:before,
-input[type=radio]:hover + label:before {
+input[type=checkbox]:hover+label:before,
+input[type=radio]:hover+label:before {
   border: 2px solid darken($border-color-focus, 5%);
 }
 
-input[type=checkbox]:checked + label:before,
-input[type=radio]:checked + label:before {
+input[type=checkbox]:checked+label:before,
+input[type=radio]:checked+label:before {
   border: 2px solid $black;
-	background: $black;
+  background: $black;
 }
 
-input[type=checkbox]:checked + label:after,
-input[type=radio]:checked + label:after {
+input[type=checkbox]:checked+label:after,
+input[type=radio]:checked+label:after {
   border: solid $white;
   border-width: 0 2px 2px 0;
 }
@@ -130,7 +132,7 @@ input[type=color] {
 .react-tel-input input[type=tel] {
   @extend input;
   width: 100% !important;
-  font-family: 'Tajawal' !important;
+  font-family: 'Inter', sans-serif !important;
   // margin-bottom: 1.2rem !important;
   font-size: $font-medium !important;
   border: 1px solid $border-color-focus !important;
@@ -140,7 +142,7 @@ input[type=color] {
   border: 1px solid $red !important;
 }
 
-.react-tel-input input[type=tel].input-error ~ .flag-dropdown {
+.react-tel-input input[type=tel].input-error~.flag-dropdown {
   border: 1px solid $red !important;
 }
 

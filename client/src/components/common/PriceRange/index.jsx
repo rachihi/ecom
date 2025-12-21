@@ -16,34 +16,52 @@ const sliderStyle = {
 const PriceRange = ({
   min, max, initMin, initMax, productsCount, onPriceChange
 }) => {
-  const [state, setState] = useState({
-    domain: [min, max],
-    values: [initMin || min, initMax || max],
-    update: [min, max].slice(),
-    inputMin: initMin || min,
-    inputMax: initMax || max,
-    inputError: false,
-    reversed: false
+  const [state, setState] = useState(() => {
+    // Clamp initial values to domain
+    const validMin = Number.isFinite(initMin) ? Math.max(min, Math.min(initMin, max)) : min;
+    const validMax = Number.isFinite(initMax) ? Math.max(min, Math.min(initMax, max)) : max;
+
+    return {
+      domain: [min, max],
+      values: [validMin, validMax],
+      update: [validMin, validMax],
+      inputMin: validMin,
+      inputMax: validMax,
+      inputError: false,
+      reversed: false
+    };
   });
 
-  const onUpdate = (update) => {
-    setState(() => ({
-      ...state, update, inputMin: update[0], inputMax: update[1]
+  const onUpdate = React.useCallback((update) => {
+    setState((prev) => ({
+      ...prev, update, inputMin: update[0], inputMax: update[1]
     }));
-  };
+  }, []);
 
-  const onChange = (values) => {
-    setState(() => ({
-      ...state, values, inputMin: values[0], inputMax: values[1]
+  const onChange = React.useCallback((values) => {
+    setState((prev) => ({
+      ...prev, values, inputMin: values[0], inputMax: values[1]
     }));
     if (values[0] < values[1]) onPriceChange(...values);
-  };
+  }, [onPriceChange]);
 
+  React.useEffect(() => {
+    if (min !== state.domain[0] || max !== state.domain[1]) {
+      setState((prev) => ({
+        ...prev,
+        domain: [min, max],
+        values: [min, max],
+        update: [min, max],
+        inputMin: min,
+        inputMax: max
+      }));
+    }
+  }, [min, max, state.domain]);
 
   const inputClassName = () => (state.inputError ? 'price-range-input price-input-error' : 'price-range-input');
 
   return (
-    <div style={{ height: 120, width: '100%' }}>
+    <div style={{ height: 70, width: '100%' }}>
       <div className="price-range-control">
         <input
           className={inputClassName()}

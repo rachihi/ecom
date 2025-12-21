@@ -43,29 +43,21 @@ function* productSaga({ type, payload }) {
       try {
         yield initRequest();
         const state = yield select();
+        const { filter } = state;
 
         // Call API instead of Firebase
         const page = payload?.page || 1;
         const limit = payload?.limit || 12;
-        const response = yield call(productAPI.getProducts, { page, limit });
-        const { products = [], total = 0 } = response.data;
-        const transformedProducts = products.map(p => ({
-          id: p._id,
-          name: p.pName,
-          description: p.pDescription,
-          price: p.pPrice,
-          quantity: p.pQuantity,
-          category: p.pCategory,
-          images: p.images || p.pImages || [],
-          image: (p.images && p.images.length > 0) ? p.images[0] : ((p.pImages && p.pImages.length > 0) ? p.pImages[0] : ''),
-          imageCollection: p.images || p.pImages || [],
-          isFeatured: false,
-          isRecommended: false,
-          availableColors: p.furniture?.colors || [],
-          maxQuantity: p.pQuantity,
-          dateAdded: p.createdAt || Date.now(),
-          discount: p.pDiscount || p.discount || 0
-        }));
+        const response = yield call(productAPI.getProducts, {
+          page,
+          limit,
+          category: filter.category,
+          minPrice: filter.minPrice,
+          maxPrice: filter.maxPrice,
+          sort: filter.sortBy
+        });
+        const { products = [], total = 0, minPrice = 0, maxPrice = 0 } = response.data;
+        const transformedProducts = products.map(product => productAPI.transformProduct(product));
 
         if (transformedProducts.length === 0) {
           handleError('No items found.');
@@ -73,7 +65,10 @@ function* productSaga({ type, payload }) {
           yield put(getProductsSuccess({
             products: transformedProducts,
             lastKey: null,
-            total: total
+            total: total,
+            minPrice,
+            maxPrice,
+            page
           }));
           yield put(setRequestStatus(''));
         }
@@ -96,23 +91,7 @@ function* productSaga({ type, payload }) {
         const { products = [] } = response.data;
 
         // Transform API response
-        const transformedProducts = products.map(p => ({
-          id: p._id,
-          name: p.pName,
-          description: p.pDescription,
-          price: p.pPrice,
-          quantity: p.pQuantity,
-          category: p.pCategory,
-          images: p.images || p.pImages || [],
-          image: (p.images && p.images.length > 0) ? p.images[0] : ((p.pImages && p.pImages.length > 0) ? p.pImages[0] : ''),
-          imageCollection: p.images || p.pImages || [],
-          isFeatured: false,
-          isRecommended: false,
-          availableColors: p.furniture?.colors || [],
-          maxQuantity: p.pQuantity,
-          dateAdded: p.createdAt || Date.now(),
-          discount: p.pDiscount || p.discount || 0
-        }));
+        const transformedProducts = products.map(product => productAPI.transformProduct(product));
 
         if (transformedProducts.length === 0) {
           yield handleError({ message: 'No product found.' });

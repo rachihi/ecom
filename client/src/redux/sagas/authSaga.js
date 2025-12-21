@@ -72,7 +72,7 @@ function* authSaga({ type, payload }) {
             phoneNumber: response.data.customer.phoneNumber,
             address: response.data.customer.address,
             role: 'CUSTOMER',
-            avatar: defaultAvatar,
+            avatar: response.data.customer.avatar || defaultAvatar,
             banner: defaultBanner,
           };
 
@@ -181,7 +181,7 @@ function* authSaga({ type, payload }) {
             phoneNumber: response.data.phoneNumber,
             address: response.data.address,
             role: 'CUSTOMER',
-            avatar: defaultAvatar,
+            avatar: response.data.avatar || defaultAvatar,
             banner: defaultBanner,
           };
 

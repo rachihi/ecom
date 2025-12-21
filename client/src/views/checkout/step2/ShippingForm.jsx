@@ -13,8 +13,8 @@ const ShippingForm = () => {
             <Field
               name="fullname"
               type="text"
-              label="* Full Name"
-              placeholder="Enter your full name"
+              label="* Họ và tên"
+              placeholder="Nhập họ và tên"
               component={CustomInput}
               style={{ textTransform: 'capitalize' }}
             />
@@ -23,8 +23,8 @@ const ShippingForm = () => {
             <Field
               name="email"
               type="email"
-              label="* Email Address"
-              placeholder="Enter your email address"
+              label="* Địa chỉ Email"
+              placeholder="Nhập địa chỉ Email"
               component={CustomInput}
             />
           </div>
@@ -34,51 +34,14 @@ const ShippingForm = () => {
             <Field
               name="address"
               type="text"
-              label="* Shipping Address"
-              placeholder="Enter full shipping address"
+              label="* Địa chỉ giao hàng"
+              placeholder="Nhập địa chỉ giao hàng đầy đủ"
               component={CustomInput}
             />
           </div>
           <div className="d-block checkout-field">
             <CustomMobileInput name="mobile" defaultValue={values.mobile} />
           </div>
-        </div>
-        <div className="checkout-fieldset">
-          <Field name="isInternational">
-            {({ field, form, meta }) => (
-              <div className="checkout-field">
-                {meta.touched && meta.error ? (
-                  <span className="label-input label-error">{meta.error}</span>
-                ) : (
-                  // eslint-disable-next-line jsx-a11y/label-has-associated-control
-                  <label
-                    className="label-input"
-                    htmlFor={field.name}
-                  >
-                    Shipping Option
-                  </label>
-                )}
-                <div className="checkout-checkbox-field">
-                  <input
-                    checked={field.value}
-                    id={field.name}
-                    onChange={(e) => {
-                      form.setValues({ ...form.values, [field.name]: e.target.checked });
-                    }}
-                    value={meta.value}
-                    type="checkbox"
-                  />
-                  <label className="d-flex w-100" htmlFor={field.name}>
-                    <h5 className="d-flex-grow-1 margin-0">
-                      &nbsp; International Shipping &nbsp;
-                      <span className="text-subtle">7-14 days</span>
-                    </h5>
-                    <h4 className="margin-0">$50.00</h4>
-                  </label>
-                </div>
-              </div>
-            )}
-          </Field>
         </div>
       </div>
     </div>

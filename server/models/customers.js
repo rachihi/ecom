@@ -13,6 +13,7 @@ const customerSchema = new mongoose.Schema(
     // Auth fields for customer login
     password: { type: String, default: null }, // Hashed password (null for guest customers)
     isRegistered: { type: Boolean, default: false }, // true if customer has account, false if guest
+    avatar: { type: String, default: null }, // Avatar URL or filename
     lastLogin: { type: Date, default: null },
   },
   { timestamps: true }

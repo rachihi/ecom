@@ -2,28 +2,44 @@ import {
   ADD_PRODUCT_SUCCESS,
   CLEAR_SEARCH_STATE, EDIT_PRODUCT_SUCCESS,
   GET_PRODUCTS_SUCCESS, REMOVE_PRODUCT_SUCCESS,
-  SEARCH_PRODUCT_SUCCESS
+  SEARCH_PRODUCT_SUCCESS, CLEAR_PRODUCT_LIST
 } from '@/constants/constants';
 
 const initState = {
   lastRefKey: null,
   total: 0,
-  items: []
+  items: [],
+  page: 1
 };
 
 export default (state = {
   lastRefKey: null,
   total: 0,
+  minPrice: 0,
+  maxPrice: 0,
   items: [],
+  page: 1,
   searchedProducts: initState
 }, action) => {
   switch (action.type) {
+    case CLEAR_PRODUCT_LIST:
+      return {
+        ...state,
+        items: [],
+        page: 1,
+        total: 0
+      };
     case GET_PRODUCTS_SUCCESS:
       return {
         ...state,
         lastRefKey: action.payload.lastKey,
         total: action.payload.total,
-        items: [...state.items, ...action.payload.products]
+        minPrice: action.payload.minPrice || 0,
+        maxPrice: action.payload.maxPrice || 0,
+        page: action.payload.page || 1,
+        items: (action.payload.page === 1)
+          ? action.payload.products
+          : [...state.items, ...action.payload.products]
       };
     case ADD_PRODUCT_SUCCESS:
       return {

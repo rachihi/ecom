@@ -72,10 +72,13 @@ apiFormData.interceptors.response.use(
 export const productAPI = {
   // Get all products with pagination
   getProducts: (params = {}) => {
-    const { page = 1, limit = 12, q = '', category = '' } = params;
-    let url = `/product/all-product?page=${page}&limit=${limit}`;
+    const { page = 1, limit = 12, q = '', category = '', minPrice = 0, maxPrice = 0, sort = '' } = params;
+    let url = `/product/all-product?page=${page}&limit=${limit}&status=Active`;
     if (q) url += `&q=${encodeURIComponent(q)}`;
     if (category) url += `&category=${category}`;
+    if (minPrice > 0) url += `&minPrice=${minPrice}`;
+    if (maxPrice > 0) url += `&maxPrice=${maxPrice}`;
+    if (sort) url += `&sort=${sort}`;
     return api.get(url);
   },
 
@@ -83,7 +86,7 @@ export const productAPI = {
   getProductById: (id) => api.post('/product/single-product', { pId: id }),
 
   // Search products
-  searchProducts: (searchKey) => api.get(`/product/all-product?q=${encodeURIComponent(searchKey)}&limit=100`),
+  searchProducts: (searchKey) => api.get(`/product/all-product?q=${encodeURIComponent(searchKey)}&limit=100&status=Active`),
 
   // Add product with file upload
   addProduct: (formData) => {
@@ -108,12 +111,36 @@ export const productAPI = {
 
   // Get featured products
   getFeaturedProducts: (limit = 6) => {
-    return api.get(`/product/all-product?limit=${limit}&isFeatured=true`);
+    return api.get(`/product/all-product?limit=${limit}&isFeatured=true&status=Active`);
   },
 
   // Get recommended products
   getRecommendedProducts: (limit = 6) => {
-    return api.get(`/product/all-product?limit=${limit}&isRecommended=true`);
+    return api.get(`/product/all-product?limit=${limit}&isRecommended=true&status=Active`);
+  },
+
+  transformProduct: (product) => {
+    console.log(product);
+
+    return {
+      id: product._id,
+      name: product.pName,
+      description: product.pDescription,
+      price: product.pPrice,
+      quantity: product.pQuantity,
+      discount: product.pDiscount || 0,
+      shortDescription: product.pShortDescription || '',
+      rating: product.pRatings ? product.pRatings : 0,
+      image: (product.images && product.images.length > 0) ? product.images[0] : (product.images && product.images.length > 0 ? product.images[0] : (product.thumbnailImage || '')),
+      images: (product.images && product.images.length > 0) ? product.images.map((img, index) => ({ id: index, url: img })) : (product.images ? product.images.map((img, index) => ({ id: index, url: img })) : []),
+      sizes: product.pSizes || [],
+      availableColors: product.pAvailableColors || [],
+      category: product.pCategory || '',
+      brand: product.pBrand || '',
+      isFeatured: product.pStatus === 'Featured',
+      isRecommended: product.pStatus === 'Recommended',
+      dateAdded: product.createdAt
+    };
   },
 };
 
@@ -168,6 +195,26 @@ export const authAPI = {
 
   // Get customer profile
   getProfile: () => api.get('/customer/profile'),
+
+  // Upload avatar
+  uploadAvatar: (formData) => {
+    return apiFormData.post('/uploads/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' } // Optional, axios sets it usually
+    });
+  },
+
+  // Update profile
+  updateProfile: (data) => api.put('/customer/profile', data),
+
+  // Change password
+  changePassword: (currentPassword, newPassword) =>
+    api.post('/customer/change-password', { currentPassword, newPassword }),
+
+  // Get customer orders
+  getOrders: (params = {}) => {
+    const { page = 1, limit = 10 } = params;
+    return api.get(`/order/me?page=${page}&limit=${limit}`);
+  },
 };
 
 export default api;

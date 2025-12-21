@@ -9,7 +9,7 @@ import {
 const initState = {
   recent: [],
   keyword: '',
-  brand: '',
+  category: '',
   minPrice: 0,
   maxPrice: 0,
   sortBy: ''
@@ -26,7 +26,7 @@ export default (state = initState, action) => {
     case SET_BRAND_FILTER:
       return {
         ...state,
-        brand: action.payload
+        category: action.payload
       };
     case SET_MAX_PRICE_FILTER:
       return {

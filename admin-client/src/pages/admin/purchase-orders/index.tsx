@@ -109,7 +109,7 @@ export default function PurchaseOrdersPage() {
 
       <MainCard title="Đơn nhập hàng" secondary={<Button variant="contained" onClick={startCreate}>Thêm</Button>}>
         <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-          <TextField size="small" placeholder="Tìm kiếm nhà cung cấp" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} />
+          <TextField size="small" placeholder="Tìm kiếm đơn nhập hàng" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} />
         </Stack>
         {isLoading && <Typography>Đang tải...</Typography>}
 
@@ -348,7 +348,7 @@ export default function PurchaseOrdersPage() {
                 </Grid>
                 <Grid item xs={12}>
                   <Typography variant="body2" color="text.secondary">Ngày tạo</Typography>
-                  <Typography variant="body1">{detailRow.orderDate && new Date(detailRow.orderDate).toLocaleDateString()}</Typography>
+                  <Typography variant="body1">{detailRow.createdAt && new Date(detailRow.createdAt).toLocaleDateString()}</Typography>
                 </Grid>
                 <Grid item xs={12}>
                   <Typography variant="h6" sx={{ mt: 1 }}>Sản phẩm</Typography>

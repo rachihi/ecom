@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const ordersController = require("../controller/orders");
+const customerAuthMiddleware = require("../middleware/customerAuth");
 
 /**
  * @swagger
@@ -103,6 +104,7 @@ const ordersController = require("../controller/orders");
  */
 router.get("/get-all-orders", ordersController.getAllOrders);
 router.post("/order-by-user", ordersController.getOrderByUser);
+router.get("/me", customerAuthMiddleware, ordersController.getOrdersByCustomer);
 
 router.post("/create-order", ordersController.postCreateOrder);
 router.post("/update-order", ordersController.postUpdateOrder);

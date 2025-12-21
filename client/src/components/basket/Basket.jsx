@@ -2,10 +2,9 @@
 import { BasketItem, BasketToggle } from '@/components/basket';
 import { Boundary, Modal } from '@/components/common';
 import { CHECKOUT_STEP_1 } from '@/constants/routes';
-import firebase from 'firebase/firebase';
 import { calculateTotal, displayMoney } from '@/helpers/utils';
-import { useDidMount, useModal } from '@/hooks';
-import React, { useEffect } from 'react';
+import { useModal } from '@/hooks';
+import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory, useLocation } from 'react-router-dom';
 import { clearBasket } from '@/redux/actions/basketActions';
@@ -19,19 +18,8 @@ const Basket = () => {
   const history = useHistory();
   const { pathname } = useLocation();
   const dispatch = useDispatch();
-  const didMount = useDidMount();
 
-  useEffect(() => {
-    if (didMount && firebase.auth.currentUser && basket.length !== 0) {
-      firebase.saveBasketItems(basket, firebase.auth.currentUser.uid)
-        .then(() => {
-          console.log('Item saved to basket');
-        })
-        .catch((e) => {
-          console.log(e);
-        });
-    }
-  }, [basket.length]);
+
 
   const onCheckOut = () => {
     if ((basket.length !== 0 && user)) {
@@ -60,7 +48,7 @@ const Basket = () => {
         isOpen={isOpenModal}
         onRequestClose={onCloseModal}
       >
-        <p className="text-center">You must sign in to continue checking out</p>
+        <p className="text-center">Bạn phải đăng nhập để tiếp tục thanh toán</p>
         <br />
         <div className="d-flex-center">
           <button
@@ -68,7 +56,7 @@ const Basket = () => {
             onClick={onCloseModal}
             type="button"
           >
-            Continue shopping
+            Tiếp tục mua sắm
           </button>
           &nbsp;
           <button
@@ -76,7 +64,7 @@ const Basket = () => {
             onClick={onSignInClick}
             type="button"
           >
-            Sign in to checkout
+            Đăng nhập để thanh toán
           </button>
         </div>
       </Modal>
@@ -84,10 +72,10 @@ const Basket = () => {
         <div className="basket-list">
           <div className="basket-header">
             <h3 className="basket-header-title">
-              My Basket &nbsp;
+              Giỏ hàng &nbsp;
               <span>
                 (
-                {` ${basket.length} ${basket.length > 1 ? 'items' : 'item'}`}
+                {` ${basket.length} ${basket.length > 1 ? 'sản phẩm' : 'sản phẩm'}`}
                 )
               </span>
             </h3>
@@ -98,7 +86,7 @@ const Basket = () => {
                   onClick={onClickToggle}
                   role="presentation"
                 >
-                  Close
+                  Đóng
                 </span>
               )}
             </BasketToggle>
@@ -108,12 +96,12 @@ const Basket = () => {
               onClick={onClearBasket}
               type="button"
             >
-              <span>Clear Basket</span>
+              <span>Xóa giỏ hàng</span>
             </button>
           </div>
           {basket.length <= 0 && (
             <div className="basket-empty">
-              <h5 className="basket-empty-msg">Your basket is empty</h5>
+              <h5 className="basket-empty-msg">Giỏ hàng trống</h5>
             </div>
           )}
           {basket.map((product, i) => (
@@ -128,9 +116,9 @@ const Basket = () => {
         </div>
         <div className="basket-checkout">
           <div className="basket-total">
-            <p className="basket-total-title">Subtotal Amout:</p>
+            <p className="basket-total-title">Tổng tiền:</p>
             <h2 className="basket-total-amount">
-              {displayMoney(calculateTotal(basket.map((product) => product.price * product.quantity)))}
+              {displayMoney(calculateTotal(basket.map((product) => (product.price - (product.price * (product.discount || 0) / 100)) * product.quantity)))}
             </h2>
           </div>
           <button
@@ -139,7 +127,7 @@ const Basket = () => {
             onClick={onCheckOut}
             type="button"
           >
-            Check Out
+            Thanh toán
           </button>
         </div>
       </div>

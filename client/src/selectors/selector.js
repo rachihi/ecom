@@ -14,9 +14,9 @@ export const selectFilter = (products, filter) => {
     const matchDescription = product.description
       ? product.description.toLowerCase().includes(keyword)
       : true;
-    const matchBrand = product.brand ? product.brand.toLowerCase().includes(filter.brand) : true;
+    const matchCategory = product.category ? product.category.toLowerCase().includes(filter.category) : true;
 
-    return ((matchKeyword || matchDescription) && matchBrand && isInRange);
+    return ((matchKeyword || matchDescription) && matchCategory && isInRange);
   }).sort((a, b) => {
     if (filter.sortBy === 'name-desc') {
       return a.name < b.name ? 1 : -1;

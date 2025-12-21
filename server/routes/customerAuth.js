@@ -2,6 +2,41 @@ const express = require("express");
 const router = express.Router();
 const customerAuthController = require("../controller/customerAuth");
 const customerAuthMiddleware = require("../middleware/customerAuth");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+
+// Multer Config for Avatars
+const uploadDir = path.join(__dirname, "../public/uploads/avatars");
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        const timestamp = Date.now();
+        const ext = path.extname(file.originalname);
+        const name = path.basename(file.originalname, ext);
+        const random = Math.floor(Math.random() * 1000);
+        const filename = `${timestamp}_${name}_${random}${ext}`;
+        cb(null, filename);
+    },
+});
+
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 2 * 1024 * 1024 }, // 2MBLimit
+    fileFilter: (req, file, cb) => {
+        if (["image/jpeg", "image/png", "image/jpg", "image/webp"].includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error("Invalid file type. Only JPG, PNG, WEBP allowed."), false);
+        }
+    }
+});
 
 /**
  * @swagger
@@ -118,6 +153,39 @@ router.post("/signin", customerAuthController.signin);
  *         description: Unauthorized
  */
 router.get("/profile", customerAuthMiddleware, customerAuthController.getProfile);
+
+/**
+ * @swagger
+ * /api/customer/upload-avatar:
+ *   post:
+ *     summary: Upload avatar
+ *     tags: [Customer Auth]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post("/upload-avatar", customerAuthMiddleware, upload.single("avatar"), customerAuthController.uploadAvatar);
+
+/**
+ * @swagger
+ * /api/customer/profile:
+ *   put:
+ *     summary: Update customer profile
+ *     tags: [Customer Auth]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.put("/profile", customerAuthMiddleware, customerAuthController.updateProfile);
+
+/**
+ * @swagger
+ * /api/customer/change-password:
+ *   post:
+ *     summary: Change password
+ *     tags: [Customer Auth]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post("/change-password", customerAuthMiddleware, customerAuthController.changePassword);
 
 module.exports = router;
 

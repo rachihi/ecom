@@ -1,4 +1,4 @@
-import { ArrowLeftOutlined, LoadingOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, LoadingOutlined, StarFilled } from '@ant-design/icons';
 import { ColorChooser, ImageLoader, MessageDisplay } from '@/components/common';
 import { ProductShowcaseGrid } from '@/components/product';
 import { RECOMMENDED_PRODUCTS, SHOP, SIGNIN } from '@/constants/routes';
@@ -60,12 +60,11 @@ const ViewProduct = () => {
 
     addToBasket({ ...product, selectedColor, selectedSize: selectedSize || product.sizes[0] });
   };
-
   return (
     <main className="content">
       {isLoading && (
         <div className="loader">
-          <h4>Loading Product...</h4>
+          <h4>Đang tải sản phẩm...</h4>
           <br />
           <LoadingOutlined style={{ fontSize: '3rem' }} />
         </div>
@@ -78,13 +77,13 @@ const ViewProduct = () => {
           <Link to={SHOP}>
             <h3 className="button-link d-inline-flex">
               <ArrowLeftOutlined />
-              &nbsp; Back to shop
+              &nbsp; Quay lại cửa hàng
             </h3>
           </Link>
           <div className="product-modal">
-            {product.imageCollection.length !== 0 && (
+            {product.images.length !== 0 && (
               <div className="product-modal-image-collection">
-                {product.imageCollection.map((image) => (
+                {product.images.map((image) => (
                   <div
                     className="product-modal-image-collection-wrapper"
                     key={image.id}
@@ -111,56 +110,58 @@ const ViewProduct = () => {
               <br />
               <span className="text-subtle">{product.brand}</span>
               <h1 className="margin-top-0">{product.name}</h1>
+              <div className="product-modal-meta" style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '10px', marginBottom: '10px' }}>
+                <div className="product-rating" style={{ display: 'flex', gap: '2px' }}>
+                  {[...Array(5)].map((_, i) => (
+                    <StarFilled key={i} style={{ color: i < (product.rating || 0) ? '#ffa500' : '#ddd', fontSize: '1.2rem' }} />
+                  ))}
+                </div>
+                {product.discount > 0 && (
+                  <span className="product-discount-tag" style={{ background: '#e53935', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                    -{product.discount}%
+                  </span>
+                )}
+              </div>
+              {product.shortDescription && (
+                <p className="product-short-desc" style={{ color: '#666', fontSize: '1rem', lineHeight: '1.5' }}>
+                  {product.shortDescription}
+                </p>
+              )}
               <span>{product.description}</span>
               <br />
               <br />
               <div className="divider" />
               <br />
-              <div>
-                <span className="text-subtle">Lens Width and Frame Size</span>
-                <br />
-                <br />
-                <Select
-                  placeholder="--Select Size--"
-                  onChange={onSelectedSizeChange}
-                  options={product.sizes.sort((a, b) => (a < b ? -1 : 1)).map((size) => ({ label: `${size} mm`, value: size }))}
-                  styles={{ menu: (provided) => ({ ...provided, zIndex: 10 }) }}
-                />
-              </div>
               <br />
-              {product.availableColors.length >= 1 && (
-                <div>
-                  <span className="text-subtle">Choose Color</span>
-                  <br />
-                  <br />
-                  <ColorChooser
-                    availableColors={product.availableColors}
-                    onSelectedColorChange={onSelectedColorChange}
-                  />
+              {product.discount > 0 ? (
+                <div className="price-wrapper">
+                  <h1 className="product-price-new" style={{ color: '#e53935' }}>{displayMoney(product.price - (product.price * (product.discount / 100)))}</h1>
+                  <h3 className="product-price-old" style={{ textDecoration: 'line-through', color: '#999' }}>{displayMoney(product.price)}</h3>
                 </div>
+              ) : (
+                <h1>{displayMoney(product.price)}</h1>
               )}
-              <h1>{displayMoney(product.price)}</h1>
               <div className="product-modal-action">
                 <button
                   className={`button button-small ${isItemOnBasket(product.id) ? 'button-border button-border-gray' : ''}`}
                   onClick={handleAddToBasket}
                   type="button"
                 >
-                  {!isAuthenticated ? 'Sign In to Add to Basket' : (isItemOnBasket(product.id) ? 'Remove From Basket' : 'Add To Basket')}
+                  {!isAuthenticated ? 'Đăng nhập để mua hàng' : (isItemOnBasket(product.id) ? 'Xóa khỏi giỏ hàng' : 'Thêm vào giỏ hàng')}
                 </button>
               </div>
             </div>
           </div>
           <div style={{ marginTop: '10rem' }}>
             <div className="display-header">
-              <h1>Recommended</h1>
-              <Link to={RECOMMENDED_PRODUCTS}>See All</Link>
+              <h1>Sản phẩm đề xuất</h1>
+              <Link to={RECOMMENDED_PRODUCTS}>Xem tất cả</Link>
             </div>
             {errorFeatured && !isLoadingFeatured ? (
               <MessageDisplay
                 message={error}
                 action={fetchRecommendedProducts}
-                buttonLabel="Try Again"
+                buttonLabel="Thử lại"
               />
             ) : (
               <ProductShowcaseGrid products={recommendedProducts} skeletonCount={3} />

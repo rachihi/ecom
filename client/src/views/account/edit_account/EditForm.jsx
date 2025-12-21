@@ -44,6 +44,28 @@ const EditForm = ({ isLoading, authProvider }) => {
         disabled={isLoading}
         label="Mobile Number (Will be used for checkout)"
       />
+      {authProvider === 'email' && (
+        <div className="edit-user-credential">
+          <br />
+          <h3 className="text-center">Change Password</h3>
+          <Field
+            disabled={isLoading}
+            name="currentPassword"
+            type="password"
+            label="Current Password"
+            placeholder="Enter your current password"
+            component={CustomInput}
+          />
+          <Field
+            disabled={isLoading}
+            name="newPassword"
+            type="password"
+            label="New Password"
+            placeholder="Enter your new password"
+            component={CustomInput}
+          />
+        </div>
+      )}
       <br />
       <div className="edit-user-action">
         <button
@@ -63,7 +85,7 @@ const EditForm = ({ isLoading, authProvider }) => {
           type="button"
         >
           {isLoading ? <LoadingOutlined /> : <CheckOutlined />}
-                    &nbsp;
+          &nbsp;
           {isLoading ? 'Updating Profile' : 'Update Profile'}
         </button>
       </div>

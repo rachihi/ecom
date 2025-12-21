@@ -34,6 +34,12 @@ export default function CashbookPage() {
   const [page, setPage] = useState(0);
   const [limit, setLimit] = useState(10);
 
+  const tMethod = (m: string) => {
+    if (m === 'Cash') return 'Tiền mặt';
+    if (m === 'BankTransfer') return 'Chuyển khoản';
+    return m;
+  };
+
   const query = useMemo(() => {
     const params = new URLSearchParams();
     if (from) params.set('from', from);
@@ -109,7 +115,7 @@ export default function CashbookPage() {
                 </TableCell>
                 <TableCell>{e.source === 'order' ? 'Đơn hàng' : 'Nhập hàng'}</TableCell>
                 <TableCell>{formatCurrency(e.amount)}</TableCell>
-                <TableCell>{e.paymentMethod}</TableCell>
+                <TableCell>{tMethod(e.paymentMethod)}</TableCell>
                 <TableCell>{e.note}</TableCell>
               </TableRow>
             ))}

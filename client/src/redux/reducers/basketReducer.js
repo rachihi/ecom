@@ -12,7 +12,14 @@ export default (state = [], action) => {
     case ADD_TO_BASKET:
       return state.some((product) => product.id === action.payload.id)
         ? state
-        : [action.payload, ...state];
+        : [
+          {
+            ...action.payload,
+            quantity: 1,
+            maxQuantity: action.payload.maxQuantity || action.payload.quantity,
+          },
+          ...state,
+        ];
     case REMOVE_FROM_BASKET:
       return state.filter((product) => product.id !== action.payload);
     case CLEAR_BASKET:

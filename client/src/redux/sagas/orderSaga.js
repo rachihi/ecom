@@ -11,7 +11,7 @@ import {
   call, put
 } from 'redux-saga/effects';
 import { setLoading, setRequestStatus } from '@/redux/actions/miscActions';
-import { orderAPI } from '@/services/api';
+import { orderAPI, authAPI } from '@/services/api';
 import {
   getOrdersSuccess,
   createOrderSuccess,
@@ -41,25 +41,30 @@ function* orderSaga({ type, payload }) {
       try {
         yield initRequest();
 
+        const { page = 1 } = payload || {};
         // Call API to get user's orders
-        const response = yield call(orderAPI.getOrdersByUser, payload?.userId);
-        const orders = response.data.orders || [];
+        const response = yield call(authAPI.getOrders, { page });
+        console.log('GET_ORDERS Response:', response.data);
+        const orders = response.data.Orders || [];
+        const pagination = response.data.pagination || {};
 
         // Transform API response
         const transformedOrders = orders.map(order => ({
           id: order._id,
-          orderNumber: order.orderNumber,
-          totalAmount: order.totalAmount,
-          status: order.status,
-          paymentStatus: order.paymentStatus,
-          items: order.items || [],
-          shippingAddress: order.shippingAddress,
-          note: order.note,
+          orderCode: order.orderCode || order.transactionId, // Handle both if needed
+          totalAmount: order.amount,
+          status: order.status || 'Checking',
+          paymentStatus: order.paymentStatus || 'unpaid',
+          items: order.details || [],
+          shippingAddress: order.address,
           createdAt: order.createdAt,
           updatedAt: order.updatedAt,
         }));
 
-        yield put(getOrdersSuccess(transformedOrders));
+        yield put(getOrdersSuccess({
+          orders: transformedOrders,
+          pagination
+        }));
         yield put(setRequestStatus(''));
         yield put(setLoading(false));
       } catch (e) {

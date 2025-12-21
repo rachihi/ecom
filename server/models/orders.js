@@ -4,12 +4,6 @@ const { ObjectId } = mongoose.Schema.Types;
 const orderSchema = new mongoose.Schema(
   {
     orderCode: { type: String, unique: true }, // Mã đơn hàng tự động (ORD-YYYYMMDD-XXXX)
-    allProduct: [
-      {
-        id: { type: ObjectId, ref: "products" },
-        quantitiy: Number,
-      },
-    ], // DEPRECATED: Keep for backward compatibility, use orderdetails table instead
     customer: {
       type: ObjectId,
       ref: "customers",
@@ -40,9 +34,9 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      default: "Not processed",
+      default: "Pending",
       enum: [
-        "Not processed",
+        "Pending",
         "Processing",
         "Shipped",
         "Delivered",
@@ -53,6 +47,11 @@ const orderSchema = new mongoose.Schema(
       type: String,
       default: "Unpaid",
       enum: ["Unpaid", "Partial", "Paid"],
+    },
+    paymentMethod: {
+      type: String,
+      default: "Cash",
+      enum: ["Cash", "BankTransfer", "Card"],
     },
   },
   { timestamps: true }

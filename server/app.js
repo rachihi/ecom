@@ -28,10 +28,8 @@ const cors = require("cors");
 const authRouter = require("./routes/auth");
 const categoryRouter = require("./routes/categories");
 const productRouter = require("./routes/products");
-const brainTreeRouter = require("./routes/braintree");
 const orderRouter = require("./routes/orders");
 const usersRouter = require("./routes/users");
-const customizeRouter = require("./routes/customize");
 const customersRouter = require("./routes/customers");
 const customerAuthRouter = require("./routes/customerAuth"); // Customer auth routes
 const warehouseRouter = require("./routes/warehouse");
@@ -78,9 +76,7 @@ app.use("/api/user", usersRouter);
 app.use("/api/customer", customerAuthRouter); // Customer auth (new)
 app.use("/api/category", categoryRouter);
 app.use("/api/product", productRouter);
-app.use("/api", brainTreeRouter);
 app.use("/api/order", orderRouter);
-app.use("/api/customize", customizeRouter);
 app.use("/api/customers", customersRouter);
 app.use("/api/warehouse", warehouseRouter);
 app.use("/api/suppliers", suppliersRouter);

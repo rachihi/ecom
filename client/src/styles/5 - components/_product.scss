@@ -1,11 +1,12 @@
 .product-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  grid-gap: $s-size;
-  justify-content: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
 
   @include mobile {
+    display: grid;
     grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1rem;
   }
 }
 
@@ -41,6 +42,7 @@
 .product-list-wrapper {
   flex-grow: 1;
   position: relative;
+  margin-top: 4rem; // Added to fix overlap with header
 
   @include mobile {
     margin-top: 5rem;
@@ -48,15 +50,18 @@
 }
 
 .product-card {
-  max-width: 180px;
-  height: 230px;
+  flex: 1 1 300px;
+  width: 100%;
+  min-width: 300px;
+  max-width: 400px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   border: 1px solid $border-color;
-  text-align: center;
+  text-align: left;
   position: relative;
   background: $white;
-  // box-shadow: 0 10px 15px rgba(0, 0, 0, .05);
   overflow: hidden;
-  // margin: auto;
   // animation: slide-up .3s ease;
 
   &:hover {
@@ -142,32 +147,86 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 5px; // Reduce gap for vertical stacking
+  flex-direction: column-reverse;
 }
 
 .product-price-new {
-  color: #000;
+  color: red;
   font-weight: bold;
-  font-size: 1.1rem;
+  font-size: 1.5rem;
 }
 
 .product-price-old {
   color: #999;
   text-decoration: line-through;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
+
+// Ensure content fills the card
+.product-card-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.product-card-img-wrapper {
+  width: 100%;
+  height: 20rem; // Match featured product
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: white;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+.product-details {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+
+  // Name left aligned
+  h5 {
+    text-align: left;
+    margin: 0;
+  }
+
+  // Price centered and pushed to bottom
+  .product-card-price {
+    margin-top: auto;
+    align-self: center;
+    font-weight: bold;
+    font-size: 1.5rem;
+  }
+}
+
+.product-card-name {
+  text-align: left;
+  margin-bottom: 0.5rem;
+}
+
+// Remove the problematic hover shrinking/shifts that break layout
 .product-card:hover .product-card-content {
-  transform: translateY(-10px);
+  // transform: translateY(-10px); // Removing this to prevent misalignment
 }
 
 .product-card:hover .product-card-button {
   bottom: 0;
 }
 
+// Ensure hover doesn't shrink image wrapper
 .product-card:hover .product-card-img-wrapper {
-  height: 8rem;
-  padding: 1rem;
+  // height: 8rem; // REMOVED: This was causing the "lệch hết" (collapse) on hover
+  // padding: 1rem; // REMOVED
 }
 
 .product-card-check {
@@ -186,50 +245,16 @@
   cursor: default;
 }
 
+// Fix loading states
 .product-loading:hover .product-card-content {
   transform: none;
 }
 
 .product-loading:hover .product-card-img-wrapper {
-  width: 90%;
-  height: 100px;
-}
-
-.product-card-content {
-  padding: 0;
-  transition: all .4s ease-in-out;
-}
-
-.product-card-img-wrapper {
   width: 100%;
-  height: 100px;
-  padding: 0 $m-size;
-  margin: auto;
-  position: relative;
-  background: #f6f6f6;
-  transition: all .4s ease-in-out;
-
-  @include mobile {
-    height: 8rem;
-  }
+  height: 20rem; // Keep consistent height
 }
 
-.product-details {
-  padding: $m-size;
-}
-
-.product-card-price {
-  color: $black;
-}
-
-.product-card-name {
-  width: 100%;
-  height: 20px;
-  margin: 0;
-  // white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
 .product-card-brand {
   margin-top: 0;
@@ -302,8 +327,7 @@
 
 .product-modal-image-wrapper {
   width: 40rem;
-  // height: 40rem;
-  height: inherit;
+  height: 40rem;
   flex-grow: 1;
   position: relative;
   background: #f8f8f8;
@@ -326,7 +350,7 @@
 
 .product-modal-image-collection {
   width: 150px;
-  height: inherit;
+  height: 40rem;
   background: #fff;
   display: flex;
   flex-direction: column;
@@ -391,6 +415,24 @@
 .product-modal-details {
   width: 500px;
   padding: $l-size;
+
+  .price-wrapper {
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 0;
+
+    .product-price-new {
+      font-size: 3rem;
+      margin: 0;
+      line-height: 1;
+    }
+
+    .product-price-old {
+      font-size: 1.8rem;
+      margin: 0;
+      line-height: 1;
+    }
+  }
 
   @include tablet {
     width: 100%;
@@ -607,18 +649,22 @@
 .product-display-grid {
   width: 100%;
   height: auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr));
-  grid-gap: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
 }
 
 .product-display {
+  flex: 1 1 300px;
   width: 100%;
+  min-width: 300px; // Prevent shrinking too small
+  max-width: 400px !important; // Enforce user limit
   max-height: unset; // Override max-height from anywhere if set
-  height: auto; // Override fixed height from .product-card
-  max-width: unset; // Override max-width from .product-card
+  height: 100%; // Override fixed height from .product-card
+  display: flex;
+  flex-direction: column;
   border: 1px solid $border-color;
-  text-align: left; // Featured products often look better left-aligned or unset center
+  text-align: left; // Override .product-card center alignment
 
   &:hover {
     cursor: pointer;
@@ -644,7 +690,7 @@
 .product-display-img {
   width: 100%;
   height: 20rem;
-  background: #f1f1f1;
+  background: #ffffff;
   position: relative;
   overflow: hidden;
 
@@ -658,6 +704,9 @@
 
 .product-display-details {
   padding: 2rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 
   h2 {
     margin: 0
@@ -665,5 +714,15 @@
 
   p {
     margin-top: 0;
+  }
+
+  .product-price-wrapper {
+    margin-top: auto;
+    align-self: center;
+  }
+
+  .product-card-price {
+    font-weight: bold;
+    font-size: 1.5rem;
   }
 }

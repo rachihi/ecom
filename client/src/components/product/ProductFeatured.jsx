@@ -36,7 +36,7 @@ const ProductFeatured = ({ product }) => {
   const productId = product.id || product._id;
 
   return (
-    <SkeletonTheme color="#e1e1e1" highlightColor="#f2f2f2">
+    <SkeletonTheme color="#ffffff" highlightColor="#fcfcfc">
       <div className="product-display product-card" onClick={onClickItem} role="presentation">
         {productId && productDiscount > 0 && (
           <div className="product-card-badge">

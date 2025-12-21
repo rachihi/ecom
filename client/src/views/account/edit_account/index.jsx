@@ -27,11 +27,13 @@ const FormSchema = Yup.object().shape({
       countryCode: Yup.string(),
       dialCode: Yup.string(),
       value: Yup.string()
-    })
+    }),
+  currentPassword: Yup.string(),
+  newPassword: Yup.string().min(6, 'Password must be at least 6 characters')
 });
 
 const EditProfile = () => {
-  useDocumentTitle('Edit Account | Salinaka');
+  useDocumentTitle('Edit Account | Bá Minh Store');
   useScrollTop();
 
   const modal = useModal();
@@ -51,7 +53,9 @@ const EditProfile = () => {
     fullname: profile.fullname || '',
     email: profile.email || '',
     address: profile.address || '',
-    mobile: profile.mobile || {}
+    mobile: { value: profile.phoneNumber } || {},
+    currentPassword: '',
+    newPassword: ''
   };
 
   const {
@@ -74,7 +78,10 @@ const EditProfile = () => {
         bannerFile: imageFile.banner.file,
         avatarFile: imageFile.avatar.file
       },
-      credentials
+      credentials: {
+        currentPassword: form.currentPassword, // Check logic later
+        newPassword: form.newPassword
+      }
     }));
   };
 
@@ -86,9 +93,13 @@ const EditProfile = () => {
 
   const onSubmitUpdate = (form) => {
     // check if data has changed
-    const fieldsChanged = Object.keys(form).some((key) => profile[key] !== form[key]);
+    const fieldsChanged = Object.keys(form).some((key) => {
+      if (key === 'currentPassword' || key === 'newPassword') return false;
+      return profile[key] !== form[key];
+    });
+    const passwordChanged = form.currentPassword && form.newPassword;
 
-    if (fieldsChanged || (Boolean(imageFile.banner.file || imageFile.avatar.file))) {
+    if (fieldsChanged || passwordChanged || (Boolean(imageFile.banner.file || imageFile.avatar.file))) {
       if (form.email !== profile.email) {
         modal.onOpenModal();
       } else {
@@ -100,7 +111,7 @@ const EditProfile = () => {
   return (
     <Boundary>
       <div className="edit-user">
-        <h3 className="text-center">Edit Account Details</h3>
+        <h3 className="text-center">Chỉnh sửa tài khoản</h3>
         <Formik
           initialValues={initFormikValues}
           validateOnChange
@@ -120,22 +131,7 @@ const EditProfile = () => {
                     <div className="loading-wrapper">
                       <LoadingOutlined />
                     </div>
-                  ) : (
-                    <label
-                      className="edit-button edit-banner-button"
-                      htmlFor="edit-banner"
-                    >
-                      <input
-                        accept="image/x-png,image/jpeg"
-                        disabled={isLoading}
-                        hidden
-                        id="edit-banner"
-                        onChange={(e) => onFileChange(e, { name: 'banner', type: 'single' })}
-                        type="file"
-                      />
-                      <EditOutlined />
-                    </label>
-                  )}
+                  ) : null}
                 </div>
                 <div className="user-profile-avatar-wrapper">
                   <ImageLoader

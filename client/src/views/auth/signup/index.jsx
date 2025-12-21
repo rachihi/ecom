@@ -13,18 +13,18 @@ import * as Yup from 'yup';
 
 const SignUpSchema = Yup.object().shape({
   fullname: Yup.string()
-    .required('Full name is required.')
-    .min(4, 'Name should be at least 4 characters.'),
+    .required('Vui lòng nhập họ tên.')
+    .min(4, 'Họ tên phải có ít nhất 4 ký tự.'),
   email: Yup.string()
-    .email('Email is not valid.')
-    .required('Email is required.'),
+    .email('Email không hợp lệ.')
+    .required('Vui lòng nhập Email.'),
   phoneNumber: Yup.string()
-    .required('Phone number is required.')
-    .matches(/^[0-9]{10,11}$/, 'Phone number must be 10-11 digits.'),
+    .required('Vui lòng nhập số điện thoại.')
+    .matches(/^[0-9]{10,11}$/, 'Số điện thoại phải từ 10-11 số.'),
   password: Yup.string()
-    .required('Password is required.')
-    .min(8, 'Password length should be at least 8 characters.')
-    .matches(/[A-Z\W]/g, 'Password should contain at least 1 uppercase letter.'),
+    .required('Vui lòng nhập mật khẩu.')
+    .min(8, 'Mật khẩu phải có ít nhất 8 ký tự.')
+    .matches(/[A-Z\W]/g, 'Mật khẩu phải chứa ít nhất 1 chữ hoa.'),
   address: Yup.string()
 });
 
@@ -36,7 +36,7 @@ const SignUp = ({ history }) => {
   const dispatch = useDispatch();
 
   useScrollTop();
-  useDocumentTitle('Sign Up | Salinaka');
+  useDocumentTitle('Sign Up | Bá Minh StoreStore');
 
   useEffect(() => () => {
     dispatch(setAuthStatus(null));
@@ -74,7 +74,7 @@ const SignUp = ({ history }) => {
           )}
           <div className={`auth ${authStatus?.message && (!authStatus?.success && 'input-error')}`}>
             <div className="auth-main">
-              <h3>Sign up to Salinaka</h3>
+              <h3>Đăng ký tài khoản</h3>
               <Formik
                 initialValues={{
                   fullname: '',
@@ -94,8 +94,8 @@ const SignUp = ({ history }) => {
                         disabled={isAuthenticating}
                         name="fullname"
                         type="text"
-                        label="* Full Name"
-                        placeholder="John Doe"
+                        label="* Họ tên"
+                        placeholder="Nguyễn Văn A"
                         style={{ textTransform: 'capitalize' }}
                         component={CustomInput}
                       />
@@ -115,7 +115,7 @@ const SignUp = ({ history }) => {
                         disabled={isAuthenticating}
                         name="phoneNumber"
                         type="tel"
-                        label="* Phone Number"
+                        label="* Số điện thoại"
                         placeholder="0123456789"
                         component={CustomInput}
                       />
@@ -125,8 +125,8 @@ const SignUp = ({ history }) => {
                         disabled={isAuthenticating}
                         name="password"
                         type="password"
-                        label="* Password"
-                        placeholder="Your Password"
+                        label="* Mật khẩu"
+                        placeholder="Nhập mật khẩu"
                         component={CustomInput}
                       />
                     </div>
@@ -135,8 +135,8 @@ const SignUp = ({ history }) => {
                         disabled={isAuthenticating}
                         name="address"
                         type="text"
-                        label="Address (Optional)"
-                        placeholder="123 Street, City"
+                        label="Địa chỉ (Tùy chọn)"
+                        placeholder="Số nhà, Tên đường..."
                         component={CustomInput}
                       />
                     </div>
@@ -147,7 +147,7 @@ const SignUp = ({ history }) => {
                         disabled={isAuthenticating}
                         type="submit"
                       >
-                        {isAuthenticating ? 'Signing Up' : 'Sign Up'}
+                        {isAuthenticating ? 'Đang đăng ký' : 'Đăng ký'}
                         &nbsp;
                         {isAuthenticating ? <LoadingOutlined /> : <ArrowRightOutlined />}
                       </button>
@@ -157,13 +157,13 @@ const SignUp = ({ history }) => {
               </Formik>
             </div>
             <div className="auth-divider">
-              <h6>OR</h6>
+              <h6>HOẶC</h6>
             </div>
             <SocialLogin isLoading={isAuthenticating} />
           </div>
           <div className="auth-message">
             <span className="auth-info">
-              <strong>Already have an account?</strong>
+              <strong>Bạn đã có tài khoản?</strong>
             </span>
             <button
               className="button button-small button-border button-border-gray"
@@ -171,7 +171,7 @@ const SignUp = ({ history }) => {
               onClick={onClickSignIn}
               type="button"
             >
-              Sign In
+              Đăng nhập
             </button>
           </div>
         </>

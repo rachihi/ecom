@@ -15,11 +15,11 @@ const ProductList = (props) => {
 
   const fetchProducts = () => {
     setFetching(true);
-    dispatch(getProducts(products.lastRefKey));
+    dispatch(getProducts({ page: products.items.length === 0 ? 1 : (products.page || 1) + 1 }));
   };
 
   useEffect(() => {
-    if (products.items.length === 0 || !products.lastRefKey) {
+    if (products.items.length === 0) {
       fetchProducts();
     }
 
@@ -29,11 +29,11 @@ const ProductList = (props) => {
 
   useEffect(() => {
     setFetching(false);
-  }, [products.lastRefKey]);
+  }, [products.items.length]);
 
   if (filteredProducts.length === 0 && !isLoading) {
     return (
-      <MessageDisplay message={requestStatus?.message || 'No products found.'} />
+      <MessageDisplay message={requestStatus?.message || 'Không tìm thấy sản phẩm'} />
     );
   } if (filteredProducts.length === 0 && requestStatus) {
     return (

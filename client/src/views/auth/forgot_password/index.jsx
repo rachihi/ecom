@@ -16,7 +16,7 @@ const ForgotPassword = () => {
   const [field, setField] = useState({});
 
   useScrollTop();
-  useDocumentTitle('Forgot Password | Salinaka');
+  useDocumentTitle('Forgot Password | Bá Minh Store');
   useEffect(() => {
     if (didMount) {
       setForgotPWStatus(authStatus);
@@ -41,8 +41,8 @@ const ForgotPassword = () => {
           {authStatus.message}
         </h5>
       )}
-      <h2>Forgot Your Password?</h2>
-      <p>Enter your email address and we will send you a password reset email.</p>
+      <h2>Quên mật khẩu?</h2>
+      <p>Nhập email của bạn và chúng tôi sẽ gửi liên kết đặt lại mật khẩu.</p>
       <br />
       <input
         field="email"
@@ -51,7 +51,7 @@ const ForgotPassword = () => {
         label="* Email"
         maxLength={40}
         onChange={onEmailChange}
-        placeholder="Enter your email"
+        placeholder="Nhập email của bạn"
         readOnly={isSendingForgotPWRequest || authStatus?.success}
         type="email"
         style={{ width: '100%' }}
@@ -66,7 +66,7 @@ const ForgotPassword = () => {
       >
         {isSendingForgotPWRequest ? <LoadingOutlined /> : <CheckOutlined />}
         &nbsp;
-        {isSendingForgotPWRequest ? 'Sending Password Reset Email' : 'Send Password Reset Email'}
+        {isSendingForgotPWRequest ? 'Đang gửi' : 'Gửi yêu cầu'}
       </button>
     </div>
   );

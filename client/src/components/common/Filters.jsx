@@ -1,31 +1,30 @@
 /* eslint-disable no-nested-ternary */
 import { useDidMount } from '@/hooks';
 import PropType from 'prop-types';
+import { categoryAPI } from '@/services/api';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory, withRouter } from 'react-router-dom';
 import { applyFilter, resetFilter } from '@/redux/actions/filterActions';
+import { clearProductList as clearProductListAction } from '@/redux/actions/productActions';
+import { getProducts } from '@/redux/actions/productActions';
 import { selectMax, selectMin } from '@/selectors/selector';
-import PriceRange from './PriceRange';
+
 
 const Filters = ({ closeModal }) => {
   const { filter, isLoading, products } = useSelector((state) => ({
     filter: state.filter,
     isLoading: state.app.loading,
-    products: state.products.items
+    products: state.products.items,
   }));
   const [field, setFilter] = useState({
-    brand: filter.brand,
-    minPrice: filter.minPrice,
-    maxPrice: filter.maxPrice,
+    category: filter.category,
     sortBy: filter.sortBy
   });
+  const [categories, setCategories] = useState([]);
   const dispatch = useDispatch();
   const history = useHistory();
   const didMount = useDidMount();
-
-  const max = selectMax(products);
-  const min = selectMin(products);
 
   useEffect(() => {
     if (didMount && window.screen.width <= 480) {
@@ -36,17 +35,23 @@ const Filters = ({ closeModal }) => {
 
     setFilter(filter);
     window.scrollTo(0, 0);
+
+    const fetchCategories = async () => {
+      try {
+        const { data } = await categoryAPI.getCategories();
+        setCategories(data.Categories || []);
+      } catch (e) {
+        console.log(e);
+      }
+    };
+    fetchCategories();
   }, [filter]);
 
 
-  const onPriceChange = (minVal, maxVal) => {
-    setFilter({ ...field, minPrice: minVal, maxPrice: maxVal });
-  };
-
-  const onBrandFilterChange = (e) => {
+  const onCategoryFilterChange = (e) => {
     const val = e.target.value;
 
-    setFilter({ ...field, brand: val });
+    setFilter({ ...field, category: val });
   };
 
   const onSortFilterChange = (e) => {
@@ -56,52 +61,53 @@ const Filters = ({ closeModal }) => {
   const onApplyFilter = () => {
     const isChanged = Object.keys(field).some((key) => field[key] !== filter[key]);
 
-    if (field.minPrice > field.maxPrice) {
-      return;
-    }
-
     if (isChanged) {
+      dispatch(clearProductListAction());
       dispatch(applyFilter(field));
+      dispatch(getProducts());
     } else {
-      closeModal();
+      if (closeModal) closeModal();
     }
   };
 
   const onResetFilter = () => {
-    const filterFields = ['brand', 'minPrice', 'maxPrice', 'sortBy'];
+    const filterFields = ['category', 'sortBy'];
 
     if (filterFields.some((key) => !!filter[key])) {
+      dispatch(clearProductListAction());
       dispatch(resetFilter());
+      dispatch(getProducts());
     } else {
-      closeModal();
+      if (closeModal) closeModal();
     }
   };
 
   return (
     <div className="filters">
-      <div className="filters-field">
-        <span>Brand</span>
+      <div className="filters-field ">
+        <span>Danh mục</span>
         <br />
         <br />
         {products.length === 0 && isLoading ? (
-          <h5 className="text-subtle">Loading Filter</h5>
+          <h5 className="text-subtle">Đang tải bộ lọc</h5>
         ) : (
           <select
             className="filters-brand"
-            value={field.brand}
+            value={field.category}
             disabled={isLoading || products.length === 0}
-            onChange={onBrandFilterChange}
+            onChange={onCategoryFilterChange}
           >
-            <option value="">All Brands</option>
-            <option value="salt">Salt Maalat</option>
-            <option value="betsin">Betsin Maalat</option>
-            <option value="black">Black Kibal</option>
-            <option value="sexbomb">Sexbomb</option>
+            <option value="">Tất cả danh mục</option>
+            {categories.map((category) => (
+              <option key={category._id} value={category._id}>
+                {category.cName}
+              </option>
+            ))}
           </select>
         )}
       </div>
       <div className="filters-field">
-        <span>Sort By</span>
+        <span>Sắp xếp theo</span>
         <br />
         <br />
         <select
@@ -110,33 +116,14 @@ const Filters = ({ closeModal }) => {
           disabled={isLoading || products.length === 0}
           onChange={onSortFilterChange}
         >
-          <option value="">None</option>
-          <option value="name-asc">Name Ascending A - Z</option>
-          <option value="name-desc">Name Descending Z - A</option>
-          <option value="price-desc">Price High - Low</option>
-          <option value="price-asc">Price Low - High</option>
+          <option value="">Mặc định</option>
+          <option value="name-asc">Tên A - Z</option>
+          <option value="name-desc">Tên Z - A</option>
+          <option value="price-desc">Giá Cao - Thấp</option>
+          <option value="price-asc">Giá Thấp - Cao</option>
         </select>
       </div>
-      <div className="filters-field">
-        <span>Price Range</span>
-        <br />
-        <br />
-        {(products.length === 0 && isLoading) || max === 0 ? (
-          <h5 className="text-subtle">Loading Filter</h5>
-        ) : products.length === 1 ? (
-          <h5 className="text-subtle">No Price Range</h5>
-        ) : (
-          <PriceRange
-            min={min}
-            max={max}
-            initMin={field.minPrice}
-            initMax={field.maxPrice}
-            isLoading={isLoading}
-            onPriceChange={onPriceChange}
-            productsCount={products.length}
-          />
-        )}
-      </div>
+
       <div className="filters-action">
         <button
           className="filters-button button button-small"
@@ -144,7 +131,7 @@ const Filters = ({ closeModal }) => {
           onClick={onApplyFilter}
           type="button"
         >
-          Apply filters
+          Áp dụng
         </button>
         <button
           className="filters-button button button-border button-small"
@@ -152,7 +139,7 @@ const Filters = ({ closeModal }) => {
           onClick={onResetFilter}
           type="button"
         >
-          Reset filters
+          Đặt lại
         </button>
       </div>
     </div>
@@ -160,7 +147,7 @@ const Filters = ({ closeModal }) => {
 };
 
 Filters.propTypes = {
-  closeModal: PropType.func.isRequired
+  closeModal: PropType.func
 };
 
 export default withRouter(Filters);

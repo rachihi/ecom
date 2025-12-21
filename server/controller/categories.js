@@ -8,7 +8,7 @@ class Category {
       const page = Math.max(parseInt(req.query.page) || 1, 1);
       const limit = Math.min(parseInt(req.query.limit) || 10, 100);
       const q = (req.query.q || '').trim();
-      const filter = q ? { cName: { $regex: q, $options: 'i' } } : {};
+      const filter = q ? { cName: { $regex: q, $options: 'i' }, cStatus: 'Active' } : { cStatus: 'Active' };
 
       const total = await categoryModel.countDocuments(filter);
       const Categories = await categoryModel

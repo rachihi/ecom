@@ -10,7 +10,6 @@ import {
 import UserAvatar from '@/views/account/components/UserAvatar';
 import BasketToggle from '../basket/BasketToggle';
 import Badge from './Badge';
-import FiltersToggle from './FiltersToggle';
 import MobileNavigation from './MobileNavigation';
 import SearchBar from './SearchBar';
 
@@ -72,19 +71,12 @@ const Navigation = () => {
         <Link onClick={onClickLink} to="/"><img alt="Logo" src={logo} /></Link>
       </div>
       <ul className="navigation-menu-main">
-        <li><NavLink activeClassName="navigation-menu-active" exact to={ROUTE.HOME}>Home</NavLink></li>
-        <li><NavLink activeClassName="navigation-menu-active" to={ROUTE.SHOP}>Shop</NavLink></li>
-        <li><NavLink activeClassName="navigation-menu-active" to={ROUTE.FEATURED_PRODUCTS}>Featured</NavLink></li>
-        <li><NavLink activeClassName="navigation-menu-active" to={ROUTE.RECOMMENDED_PRODUCTS}>Recommended</NavLink></li>
+        <li><NavLink activeClassName="navigation-menu-active" exact to={ROUTE.HOME}>Trang chủ</NavLink></li>
+        <li><NavLink activeClassName="navigation-menu-active" to={ROUTE.SHOP}>Cửa hàng</NavLink></li>
+        <li><NavLink activeClassName="navigation-menu-active" to={ROUTE.FEATURED_PRODUCTS}>Nổi bật</NavLink></li>
+        <li><NavLink activeClassName="navigation-menu-active" to={ROUTE.RECOMMENDED_PRODUCTS}>Đề xuất</NavLink></li>
       </ul>
-      {(pathname === ROUTE.SHOP || pathname === ROUTE.SEARCH) && (
-        <FiltersToggle>
-          <button className="button-muted button-small" type="button">
-            Filters &nbsp;
-            <FilterOutlined />
-          </button>
-        </FiltersToggle>
-      )}
+
       <SearchBar />
       <ul className="navigation-menu">
         {/* Only show basket if user is logged in */}
@@ -119,7 +111,7 @@ const Navigation = () => {
                 onClick={onClickLink}
                 to={ROUTE.SIGNUP}
               >
-                Sign Up
+                Đăng ký
               </Link>
             )}
             {pathname !== ROUTE.SIGNIN && (
@@ -128,7 +120,7 @@ const Navigation = () => {
                 onClick={onClickLink}
                 to={ROUTE.SIGNIN}
               >
-                Sign In
+                Đăng nhập
               </Link>
             )}
           </li>

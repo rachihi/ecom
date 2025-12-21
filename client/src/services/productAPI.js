@@ -21,8 +21,6 @@ export const productAPI = {
       limit = 12,
       q = "",
       category = "",
-      minPrice = "",
-      maxPrice = "",
       materials = "",
       colors = "",
       styles = "",
@@ -32,12 +30,10 @@ export const productAPI = {
       sort = "newest",
     } = params;
 
-    let url = `/product/all-product?page=${page}&limit=${limit}&sort=${sort}`;
+    let url = `/product/all-product?page=${page}&limit=${limit}&sort=${sort}&status=Active`;
 
     if (q) url += `&q=${encodeURIComponent(q)}`;
     if (category) url += `&category=${category}`;
-    if (minPrice) url += `&minPrice=${minPrice}`;
-    if (maxPrice) url += `&maxPrice=${maxPrice}`;
     if (materials) url += `&materials=${materials}`;
     if (colors) url += `&colors=${colors}`;
     if (styles) url += `&styles=${styles}`;
@@ -54,7 +50,7 @@ export const productAPI = {
    */
   searchProducts: (searchKey, limit = 100) =>
     api.get(
-      `/product/all-product?q=${encodeURIComponent(searchKey)}&limit=${limit}&sort=popular`
+      `/product/all-product?q=${encodeURIComponent(searchKey)}&limit=${limit}&sort=popular&status=Active`
     ),
 
   /**
@@ -91,7 +87,7 @@ export const productAPI = {
    * GET /api/product/featured
    */
   getFeaturedProducts: (limit = 6) =>
-    api.get(`/product/all-product?limit=${limit}&isFeatured=true&sort=popular`),
+    api.get(`/product/all-product?limit=${limit}&isFeatured=true&sort=popular&status=Active`),
 
   /**
    * Lấy sản phẩm được đề xuất (recommended)
@@ -99,7 +95,7 @@ export const productAPI = {
    */
   getRecommendedProducts: (limit = 6) =>
     api.get(
-      `/product/all-product?limit=${limit}&isRecommended=true&sort=popular`
+      `/product/all-product?limit=${limit}&isRecommended=true&sort=popular&status=Active`
     ),
 
   /**

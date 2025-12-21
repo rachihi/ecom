@@ -362,14 +362,14 @@ furnitureProductSchema.pre("save", function (next) {
 furnitureProductSchema.statics.findNewProducts = function (limit = 10, days = 30) {
   const date = new Date();
   date.setDate(date.getDate() - days);
-  return this.find({ pStatus: "active", createdAt: { $gte: date } })
+  return this.find({ pStatus: { $in: ["active", "Active"] }, createdAt: { $gte: date } })
     .sort({ createdAt: -1 })
     .limit(limit);
 };
 
 furnitureProductSchema.statics.findTopRated = function (limit = 10) {
   return this.aggregate([
-    { $match: { pStatus: "active" } },
+    { $match: { pStatus: { $in: ["active", "Active"] } } },
     {
       $addFields: {
         avgRating: {

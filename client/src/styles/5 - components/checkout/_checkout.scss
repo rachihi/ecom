@@ -94,6 +94,7 @@
   color: $gray-20;
   margin-top: $s-size;
   margin-bottom: 0;
+  text-align: center; // Added to center text
 }
 
 .is-active-step .checkout-header-step {
@@ -166,7 +167,7 @@
 .checkout-field {
   width: 100%;
   margin: 0 $s-size;
-  
+
   @include mobile {
     margin: 0
   }
@@ -176,7 +177,7 @@
   display: flex;
   align-items: center;
 
-  & > div {
+  &>div {
     margin-bottom: $s-size;
   }
 

@@ -18,28 +18,28 @@ import ShippingTotal from './ShippingTotal';
 
 const FormSchema = Yup.object().shape({
   fullname: Yup.string()
-    .required('Full name is required.')
-    .min(2, 'Full name must be at least 2 characters long.')
-    .max(60, 'Full name must only be less than 60 characters.'),
+    .required('Vui lòng nhập họ tên.')
+    .min(2, 'Họ tên phải có ít nhất 2 ký tự.')
+    .max(60, 'Họ tên không được quá 60 ký tự.'),
   email: Yup.string()
-    .email('Email is not valid.')
-    .required('Email is required.'),
+    .email('Email không hợp lệ.')
+    .required('Vui lòng nhập Email.'),
   address: Yup.string()
-    .required('Shipping address is required.'),
+    .required('Vui lòng nhập địa chỉ giao hàng.'),
   mobile: Yup.object()
     .shape({
       country: Yup.string(),
       countryCode: Yup.string(),
-      dialCode: Yup.string().required('Mobile number is required'),
-      value: Yup.string().required('Mobile number is required')
+      dialCode: Yup.string(),
+      value: Yup.string().required('Cần nhập số điện thoại')
     })
-    .required('Mobile number is required.'),
+    .required('Cần nhập số điện thoại.'),
   isInternational: Yup.boolean(),
   isDone: Yup.boolean()
 });
 
 const ShippingDetails = ({ profile, shipping, subtotal }) => {
-  useDocumentTitle('Check Out Step 2 | Salinaka');
+  useDocumentTitle('Check Out Step 2 | Bá Minh Store');
   useScrollTop();
   const dispatch = useDispatch();
   const history = useHistory();
@@ -48,7 +48,7 @@ const ShippingDetails = ({ profile, shipping, subtotal }) => {
     fullname: shipping.fullname || profile.fullname || '',
     email: shipping.email || profile.email || '',
     address: shipping.address || profile.address || '',
-    mobile: shipping.mobile || profile.mobile || {},
+    mobile: shipping.mobile || (profile.phoneNumber ? { value: profile.phoneNumber } : {}),
     isInternational: shipping.isInternational || false,
     isDone: shipping.isDone || false
   };
@@ -70,7 +70,7 @@ const ShippingDetails = ({ profile, shipping, subtotal }) => {
       <div className="checkout">
         <StepTracker current={2} />
         <div className="checkout-step-2">
-          <h3 className="text-center">Shipping Details</h3>
+          <h3 className="text-center">Thông tin giao hàng</h3>
           <Formik
             initialValues={initFormikValues}
             validateOnChange
@@ -93,13 +93,13 @@ const ShippingDetails = ({ profile, shipping, subtotal }) => {
                   >
                     <ArrowLeftOutlined />
                     &nbsp;
-                    Go Back
+                    Quay lại
                   </button>
                   <button
                     className="button button-icon"
                     type="submit"
                   >
-                    Next Step
+                    Bước tiếp theo
                     &nbsp;
                     <ArrowRightOutlined />
                   </button>
@@ -119,7 +119,8 @@ ShippingDetails.propTypes = {
     fullname: PropType.string,
     email: PropType.string,
     address: PropType.string,
-    mobile: PropType.object
+    mobile: PropType.object,
+    phoneNumber: PropType.string
   }).isRequired,
   shipping: PropType.shape({
     fullname: PropType.string,

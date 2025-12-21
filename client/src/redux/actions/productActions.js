@@ -2,6 +2,7 @@ import {
   ADD_PRODUCT,
   ADD_PRODUCT_SUCCESS,
   CANCEL_GET_PRODUCTS,
+  CLEAR_PRODUCT_LIST,
   CLEAR_SEARCH_STATE,
   EDIT_PRODUCT,
   EDIT_PRODUCT_SUCCESS,
@@ -16,6 +17,10 @@ import {
 export const getProducts = (lastRef) => ({
   type: GET_PRODUCTS,
   payload: lastRef
+});
+
+export const clearProductList = () => ({
+  type: CLEAR_PRODUCT_LIST
 });
 
 export const getProductsSuccess = (products) => ({
