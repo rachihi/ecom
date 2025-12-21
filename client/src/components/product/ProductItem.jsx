@@ -12,6 +12,7 @@ const ProductItem = ({ product }) => {
   const history = useHistory();
   const dispatch = useDispatch();
   const basket = useSelector((state) => state.basket);
+  const auth = useSelector((state) => state.auth);
   const isItemOnBasket = (id) => !!basket?.find((item) => item.id === id);
 
   const onClickItem = () => {
@@ -50,9 +51,11 @@ const ProductItem = ({ product }) => {
 
         {product.id && (
           <div className="product-card-actions">
-            <div className="product-action" onClick={onAddToBasket} role="button" tabIndex={0}>
-              {isItemOnBasket(product.id) ? <CheckOutlined style={{ color: 'green' }} /> : <ShoppingCartOutlined />}
-            </div>
+            {auth && (
+              <div className="product-action" onClick={onAddToBasket} role="button" tabIndex={0}>
+                {isItemOnBasket(product.id) ? <CheckOutlined style={{ color: 'green' }} /> : <ShoppingCartOutlined />}
+              </div>
+            )}
             <div className="product-action" onClick={onClickItem} role="button" tabIndex={0}>
               <EyeOutlined />
             </div>

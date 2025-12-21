@@ -12,6 +12,7 @@ const ProductFeatured = ({ product }) => {
   const history = useHistory();
   const dispatch = useDispatch();
   const basket = useSelector((state) => state.basket);
+  const auth = useSelector((state) => state.auth);
   const isItemOnBasket = (id) => !!basket?.find((item) => item.id === id);
 
   const onClickItem = () => {
@@ -40,20 +41,19 @@ const ProductFeatured = ({ product }) => {
       <div className="product-display product-card" onClick={onClickItem} role="presentation">
         {productId && productDiscount > 0 && (
           <div className="product-card-badge">
-            <span>Sale</span>
+            <span>Giảm giá</span>
           </div>
         )}
 
         {productId && (
           <div className="product-card-actions">
-            <div className="product-action" onClick={(e) => { e.stopPropagation(); onAddToBasket(); }} role="button" tabIndex={0}>
-              {isItemOnBasket(productId) ? <CheckOutlined style={{ color: 'green' }} /> : <ShoppingCartOutlined />}
-            </div>
+            {auth && (
+              <div className="product-action" onClick={(e) => { e.stopPropagation(); onAddToBasket(); }} role="button" tabIndex={0}>
+                {isItemOnBasket(productId) ? <CheckOutlined style={{ color: 'green' }} /> : <ShoppingCartOutlined />}
+              </div>
+            )}
             <div className="product-action" onClick={(e) => { e.stopPropagation(); onClickItem(); }} role="button" tabIndex={0}>
               <EyeOutlined />
-            </div>
-            <div className="product-action" onClick={(e) => e.stopPropagation()} role="button" tabIndex={0}>
-              <RetweetOutlined />
             </div>
           </div>
         )}
