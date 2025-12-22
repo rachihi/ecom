@@ -8,7 +8,6 @@ const categorySchema = new mongoose.Schema(
     },
     cDescription: {
       type: String,
-      required: true,
     },
     cStatus: {
       type: String,
