@@ -27,10 +27,9 @@ export default function CategoriesPage() {
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<CategoryForm>(emptyForm);
-  const [imageFile, setImageFile] = useState<File | null>(null);
 
-  const handleOpenCreate = () => { setForm(emptyForm); setImageFile(null); setOpen(true); };
-  const handleOpenEdit = (row: CategoryForm) => { setForm(row); setImageFile(null); setOpen(true); };
+  const handleOpenCreate = () => { setForm(emptyForm); setOpen(true); };
+  const handleOpenEdit = (row: CategoryForm) => { setForm(row); setOpen(true); };
   const handleClose = () => setOpen(false);
 
   const handleSave = async () => {
@@ -39,7 +38,6 @@ export default function CategoriesPage() {
       fd.append('cName', form.cName);
       fd.append('cDescription', form.cDescription || '');
       fd.append('cStatus', form.cStatus || 'Active');
-      if (imageFile) fd.append('cImage', imageFile);
       await axios.post('/api/category/add-category', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
     } else {
       const fd = new FormData();
@@ -119,9 +117,6 @@ export default function CategoriesPage() {
               <MenuItem value="Active">Hoạt động</MenuItem>
               <MenuItem value="Inactive">Tạm dừng</MenuItem>
             </Select>
-            {!form._id && (
-              <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} />
-            )}
           </Stack>
         </DialogContent>
         <DialogActions>
