@@ -1,13 +1,13 @@
-# Bá Minh Store | E-commerce react app
+# 102 Concept | E-commerce react app
 Simple ecommerce react js app with firebase [typescript].
 ![Firebase Deploy](https://github.com/jgudo/ecommerce-react/workflows/Firebase%20Deploy/badge.svg)
 
-### [Live demo](https://Bá Minh Store-ecommerce.web.app/)
+### [Live demo](https://102 Concept-ecommerce.web.app/)
 
-![Bá Minh Store screenshot](https://raw.githubusercontent.com/jgudo/ecommerce-react/master/static/screeny1.png)
-![Bá Minh Store screenshot](https://raw.githubusercontent.com/jgudo/ecommerce-react/master/static/screeny2.png)
-![Bá Minh Store screenshot](https://raw.githubusercontent.com/jgudo/ecommerce-react/master/static/screeny3.png)
-![Bá Minh Store screenshot](https://raw.githubusercontent.com/jgudo/ecommerce-react/master/static/screeny7.png)
+![102 Concept screenshot](https://raw.githubusercontent.com/jgudo/ecommerce-react/master/static/screeny1.png)
+![102 Concept screenshot](https://raw.githubusercontent.com/jgudo/ecommerce-react/master/static/screeny2.png)
+![102 Concept screenshot](https://raw.githubusercontent.com/jgudo/ecommerce-react/master/static/screeny3.png)
+![102 Concept screenshot](https://raw.githubusercontent.com/jgudo/ecommerce-react/master/static/screeny7.png)
 
 ## Run Locally
 ### 1. Install Dependencies

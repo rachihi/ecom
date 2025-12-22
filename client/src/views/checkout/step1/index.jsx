@@ -11,7 +11,7 @@ import { StepTracker } from '../components';
 import withCheckout from '../hoc/withCheckout';
 
 const OrderSummary = ({ basket, subtotal }) => {
-  useDocumentTitle('Check Out Step 1 | Bá Minh Store');
+  useDocumentTitle('Đặt hàng - Bước 1 | 102 Concept');
   useScrollTop();
   const dispatch = useDispatch();
   const history = useHistory();

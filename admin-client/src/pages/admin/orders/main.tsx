@@ -194,7 +194,7 @@ export default function OrdersPage() {
         <TableBody>
           {rows?.map((row) => (
             <TableRow key={row._id} hover>
-              <TableCell>{row.transactionId || (row as any).orderCode}</TableCell>
+              <TableCell>{(row as any).orderCode}</TableCell>
               <TableCell>{typeof row.customer === 'string' ? row.customer : row.customer?.fullName}</TableCell>
               <TableCell>{formatCurrency(row.amount || 0)}</TableCell>
               <TableCell>

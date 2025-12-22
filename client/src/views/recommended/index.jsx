@@ -5,7 +5,7 @@ import bannerImg from '@/images/banner-girl-1.png';
 import React from 'react';
 
 const RecommendedProducts = () => {
-  useDocumentTitle('Recommended Products | Bá Minh Store');
+  useDocumentTitle('Sản phẩm được đề xuất | 102 Concept');
   useScrollTop();
 
   const {

@@ -14,7 +14,7 @@ import { clearBasket } from '@/redux/actions/basketActions';
 import { resetCheckout } from '@/redux/actions/checkoutActions';
 
 const Payment = ({ shipping, payment, subtotal }) => {
-  useDocumentTitle('Check Out Final Step | Bá Minh Store');
+  useDocumentTitle('Đặt hàng - Bước 3 | 102 Concept');
   useScrollTop();
 
   const dispatch = useDispatch();

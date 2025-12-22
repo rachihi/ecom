@@ -29,7 +29,7 @@ const SignIn = ({ history }) => {
   const dispatch = useDispatch();
 
   useScrollTop();
-  useDocumentTitle('Sign In | Bá Minh StoreStore');
+  useDocumentTitle('Sign In | 102 Concept StoreStore');
 
   useEffect(() => () => {
     dispatch(setAuthStatus(null));

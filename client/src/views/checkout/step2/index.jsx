@@ -39,7 +39,7 @@ const FormSchema = Yup.object().shape({
 });
 
 const ShippingDetails = ({ profile, shipping, subtotal }) => {
-  useDocumentTitle('Check Out Step 2 | Bá Minh Store');
+  useDocumentTitle('Đặt hàng - Bước 2 | 102 Concept');
   useScrollTop();
   const dispatch = useDispatch();
   const history = useHistory();

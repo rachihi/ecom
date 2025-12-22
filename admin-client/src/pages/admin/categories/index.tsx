@@ -86,7 +86,7 @@ export default function CategoriesPage() {
             {rows?.map((row) => (
               <TableRow key={row._id} hover>
                 <TableCell>{row.cName}</TableCell>
-                <TableCell>{row.cStatus}</TableCell>
+                <TableCell>{row.cStatus === 'Active' ? 'Hoạt động' : (row.cStatus === 'Inactive' ? 'Tạm dừng' : row.cStatus)}</TableCell>
                 <TableCell align="right">
                   <Stack direction="row" spacing={1} justifyContent="flex-end">
                     <Button size="small" onClick={() => handleOpenEdit(row)}>{'Sửa'}</Button>

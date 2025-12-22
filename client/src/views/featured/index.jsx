@@ -5,7 +5,7 @@ import bannerImg from '@/images/banner-guy.png';
 import React from 'react';
 
 const FeaturedProducts = () => {
-  useDocumentTitle('Featured Products | Bá Minh Store');
+  useDocumentTitle('Sản phẩm nổi bật | 102 Concept');
   useScrollTop();
 
   const {

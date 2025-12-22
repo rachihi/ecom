@@ -11,7 +11,7 @@ import { Link } from 'react-router-dom';
 
 
 const Home = () => {
-  useDocumentTitle('Bá Minh Store | Home');
+  useDocumentTitle('102 Concept');
   useScrollTop();
 
   const {
@@ -35,7 +35,7 @@ const Home = () => {
             <h1 className="text-thin">
               <strong>Không gian</strong>
               &nbsp;sống hoàn hảo với&nbsp;
-              <strong>Bá Minh</strong>
+              <strong>102 Concept</strong>
             </h1>
             <p>
               Kiến tạo không gian sống sang trọng và tiện nghi với nội thất tinh tế.

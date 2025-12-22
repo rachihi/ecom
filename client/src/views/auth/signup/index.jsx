@@ -36,7 +36,7 @@ const SignUp = ({ history }) => {
   const dispatch = useDispatch();
 
   useScrollTop();
-  useDocumentTitle('Sign Up | Bá Minh StoreStore');
+  useDocumentTitle('Sign Up | 102 Concept StoreStore');
 
   useEffect(() => () => {
     dispatch(setAuthStatus(null));

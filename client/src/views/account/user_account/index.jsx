@@ -17,7 +17,7 @@ const Loader = () => (
 
 const UserAccount = () => {
   useScrollTop();
-  useDocumentTitle('My Account | Bá Minh Store');
+  useDocumentTitle('Tài khoản | 102 Concept');
 
   return (
     <UserTab>

@@ -5,7 +5,7 @@ const useDocumentTitle = (title) => {
     if (title) {
       document.title = title;
     } else {
-      document.title = 'Bá Minh Store';
+      document.title = '102 Concept';
     }
   }, [title]);
 };

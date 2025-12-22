@@ -18,7 +18,7 @@ const Footer = () => {
           <span>
             Phát triển bởi
             {' '}
-            <a>Bá Minh</a>
+            <a>102 Concept</a>
           </span>
         </strong>
       </div>

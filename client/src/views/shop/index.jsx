@@ -6,7 +6,7 @@ import { selectFilter } from '@/selectors/selector';
 import { Filters } from '@/components/common';
 
 const Shop = () => {
-  useDocumentTitle('Shop | Bá Minh Store');
+  useDocumentTitle('Cửa hàng | 102 Concept');
   useScrollTop();
 
   const store = useSelector((state) => ({
