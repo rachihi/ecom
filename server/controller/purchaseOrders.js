@@ -93,7 +93,6 @@ class PurchaseOrdersController {
       const created = await new purchaseOrderModel({
         orderCode,
         supplier,
-        items: [], // Keep empty, use purchaseorderdetails table
         totalQuantity,
         totalAmount,
         status: "Pending",
