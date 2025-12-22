@@ -27,7 +27,7 @@ class Category {
   async postAddCategory(req, res) {
     let { cName, cDescription, cStatus } = req.body;
 
-    if (!cName || !cDescription || !cStatus) {
+    if (!cName || !cStatus) {
       return res.json({ error: "All filled must be required" });
     }
 
