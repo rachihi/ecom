@@ -147,6 +147,7 @@ export default function ProductsPage() {
       // Tạo payload JSON
       // Upload new images first
       // Sử dụng trực tiếp URLs đã upload từ state
+
       const imageUrls = imgPreviews;
 
       const payload = {
