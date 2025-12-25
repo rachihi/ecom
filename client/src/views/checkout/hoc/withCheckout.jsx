@@ -14,7 +14,11 @@ const withCheckout = (Component) => withRouter((props) => {
     profile: store.profile
   }));
 
-  const subtotal = calculateTotal(state.basket.map((product) => (product.price - (product.price * (product.discount || 0) / 100)) * product.quantity));
+  const subtotal = calculateTotal(state.basket.map((product) => {
+    const productPrice = product.price || product.pPrice || 0;
+    const productDiscount = product.discount || product.pDiscount || 0;
+    return (productPrice - (productPrice * productDiscount / 100)) * product.quantity;
+  }));
 
   if (!state.isAuth) {
     return <Redirect to={SIGNIN} />;

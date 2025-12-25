@@ -172,7 +172,7 @@ export default function Breadcrumbs({
               >
                 {icons && <Home3 style={iconSX} />}
                 {icon && !icons && <Home3 variant="Bold" style={{ ...iconSX, marginRight: 0 }} />}
-                {(!icon || icons) && 'Home'}
+                {(!icon || icons) && 'Trang chủ'}
               </Typography>
               {mainContent}
             </MuiBreadcrumbs>
@@ -213,7 +213,7 @@ export default function Breadcrumbs({
         >
           {icons && <Home3 style={iconSX} />}
           {icon && !icons && <Home3 variant="Bold" style={{ ...iconSX, marginRight: 0 }} />}
-          {(!icon || icons) && 'Home'}
+          {(!icon || icons) && 'Trang chủ'}
         </Typography>
         {mainContent}
         {itemContent}

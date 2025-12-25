@@ -52,8 +52,8 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
     <>
       <Formik
         initialValues={{
-          email: 'info@phoenixcoded.co',
-          password: '123456',
+          email: '',
+          password: '',
           submit: null
         }}
         validationSchema={Yup.object().shape({
@@ -89,7 +89,7 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <Stack spacing={1}>
-                  <InputLabel htmlFor="email-login">Email Address</InputLabel>
+                  <InputLabel htmlFor="email-login">Email</InputLabel>
                   <OutlinedInput
                     id="email-login"
                     type="email"
@@ -110,7 +110,7 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
               </Grid>
               <Grid item xs={12}>
                 <Stack spacing={1}>
-                  <InputLabel htmlFor="password-login">Password</InputLabel>
+                  <InputLabel htmlFor="password-login">Mật khẩu</InputLabel>
                   <OutlinedInput
                     fullWidth
                     error={Boolean(touched.password && errors.password)}

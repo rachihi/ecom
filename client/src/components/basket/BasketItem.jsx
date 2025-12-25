@@ -9,9 +9,13 @@ import { Link } from 'react-router-dom';
 import { removeFromBasket } from '@/redux/actions/basketActions';
 
 const BasketItem = ({ product }) => {
+
   const dispatch = useDispatch();
   const onRemoveFromBasket = () => dispatch(removeFromBasket(product.id));
 
+  const productPrice = product.price || product.pPrice || 0;
+  const productDiscount = product.discount || product.pDiscount || 0;
+  const productImage = product.image || (product.images && product.images[0]) || '';
   return (
     <div className="basket-item">
       <BasketItemControl product={product} />
@@ -20,7 +24,7 @@ const BasketItem = ({ product }) => {
           <ImageLoader
             alt={product.name}
             className="basket-item-img"
-            src={product.image}
+            src={productImage}
           />
         </div>
         <div className="basket-item-details">
@@ -38,7 +42,7 @@ const BasketItem = ({ product }) => {
         </div>
         <div className="basket-item-price">
           <h4 className="my-0">
-            {displayMoney((product.price - (product.price * (product.discount || 0) / 100)) * product.quantity)}
+            {displayMoney((productPrice - (productPrice * productDiscount / 100)) * product.quantity)}
           </h4>
         </div>
         <button

@@ -8,8 +8,9 @@ const { ObjectId } = mongoose.Schema.Types;
 
 const furnitureProductSchema = new mongoose.Schema(
   {
+
     // ===========================
-    // THÔNG TIN CƠ BẢN
+    // THÔNG TIN CƠ BẢN (BASIC INFO)
     // ===========================
     pName: {
       type: String,
@@ -17,184 +18,153 @@ const furnitureProductSchema = new mongoose.Schema(
       maxlength: 255,
       trim: true,
       index: true,
+      // Tên sản phẩm
     },
     pSKU: {
       type: String,
       unique: true,
       required: true,
       index: true,
-      // Format: FURN-{CATEGORY}-{TIMESTAMP}-{SERIAL}
+      // Mã kho (Stock Keeping Unit) - Unique
     },
     pSlug: {
       type: String,
       unique: true,
       lowercase: true,
-      // URL-friendly slug
+      // URL thân thiện cho SEO
     },
     pDescription: {
       type: String,
-      required: true,
       maxlength: 3000,
+      // Mô tả chi tiết sản phẩm (HTML/Markdown)
     },
     pShortDescription: {
       type: String,
       maxlength: 500,
-      // Mô tả ngắn cho danh sách
+      // Mô tả ngắn gọn hiển thị ở danh sách
     },
 
-
     // ===========================
-    // ẢNH SẢN PHẨM (LƯU MẢNG STRING FILENAME)
-    images: [
-      {
-        type: String,
-        // filename or base64 string
-      }
-    ],
-    // ===========================
-    // GIÁ VÀ KHUYẾN MÃI
+    // GIÁ & KHUYẾN MÃI (PRICING)
     // ===========================
     pPrice: {
       type: Number,
       required: true,
       min: 0,
       index: true,
+      // Giá bán lẻ (hiển thị cho khách)
     },
     pCost: {
       type: Number,
       required: true,
       min: 0,
       index: true,
+      // Giá vốn (giá nhập)
     },
     pComparePrice: {
       type: Number,
       min: 0,
-      // Giá gốc trước giảm
-    },
-    pCost: {
-      type: Number,
-      min: 0,
-      // Giá vốn
-    },
-    discount: {
-      type: Number,
-      min: 0,
-      max: 100,
-      default: 0,
-      // Phần trăm giảm giá
+      // Giá gốc (trước khi giảm) - dùng để hiển thị gạch ngang
     },
     pDiscount: {
       type: Number,
       min: 0,
       max: 100,
       default: 0,
-      // Alias cho discount
+      // % Giảm giá trực tiếp
     },
-    pOffer: {
-      type: String,
-      // Miêu tả khuyến mãi
-    },
-    offerExpiry: Date,
+    offerExpiry: Date, // Thời hạn khuyến mãi
 
     // ===========================
-    // DANH MỤC & PHÂN LOẠI
+    // PHÂN LOẠI (CATEGORY)
     // ===========================
     pCategory: {
       type: ObjectId,
       ref: "categories",
       required: true,
       index: true,
-    },
-    pSubCategory: {
-      type: ObjectId,
-      ref: "categories",
+      // Tham chiếu đến danh mục sản phẩm
     },
 
     // ===========================
-    // THÔNG TIN CHI TIẾT NỘI THẤT
+    // THÔNG TIN CHI TIẾT (DETAILS)
     // ===========================
     furniture: {
-      // Kích thước
+      // Kích thước (Dimensions)
       dimensions: {
-        length: Number,        // Chiều dài (cm)
-        width: Number,         // Chiều rộng (cm)
-        height: Number,        // Chiều cao (cm)
-        depth: Number,         // Độ sâu (cm)
+        length: Number,        // Dài (cm)
+        width: Number,         // Rộng (cm)
+        height: Number,        // Cao (cm)
+        depth: Number,         // Sâu (cm)
         unit: {
           type: String,
           default: "cm",
         },
       },
 
-      // Chất liệu
+      // Chất liệu (Materials)
       material: {
-        primary: String,       // Chất liệu chính
+        primary: String,       // Chất liệu chính (Gỗ, Da, Vải...)
         secondary: [String],   // Chất liệu phụ
-        filling: String,       // Chất nhân (ghế/sofa)
+        filling: String,       // Chất liệu đệm/nhân
       },
 
-      // Trọng lượng & Kích thước vận chuyển
-      weight: Number,         // kg
-      maxWeight: Number,      // Trọng lượng tối đa
-      shippingDimensions: {
-        length: Number,
-        width: Number,
-        height: Number,
-        unit: String,
-      },
-
-      // Hướng dẫn chăm sóc
-      care: [String],
+      weight: Number,      // Trọng lượng (kg)
+      maxWeight: Number,   // Tải trọng tối đa (kg)
     },
 
     // ===========================
-    // HÌNH ẢNH
+    // HÌNH ẢNH (IMAGES)
     // ===========================
-    // ===========================
-    // HÌNH ẢNH (DEPRECATED FIELDS)
-    pImages: [String],         // Array filenames for compatibility
-    thumbnailImage: String,
-    // ===========================
-    // TÌNH TRẠNG & TỒN KHO
-    // ===========================
+    images: [String],        // Danh sách tên file ảnh
+    thumbnailImage: String,   // Ảnh đại diện chính
 
+    // ===========================
+    // TRẠNG THÁI (STATUS)
+    // ===========================
     pStatus: {
       type: String,
       enum: ["active", "inactive", "discontinued", "draft", "Active", "Inactive"],
       default: "draft",
       index: true,
+      // Trạng thái: Active (Đang bán), Inactive (Ẩn), Draft (Nháp)
     },
 
     // ===========================
-    // HIỂN THỊ & TÍNH NĂNG
+    // TÍNH NĂNG (FLAGS)
     // ===========================
     isFeatured: {
       type: Boolean,
       default: false,
       index: true,
+      // Sản phẩm nổi bật
     },
     isRecommended: {
       type: Boolean,
       default: false,
       index: true,
+      // Sản phẩm đề xuất
     },
     isNewProduct: {
       type: Boolean,
       default: true,
       index: true,
+      // Sản phẩm mới
     },
     isOnSale: {
       type: Boolean,
       default: false,
       index: true,
+      // Đang giảm giá/Sale
     },
     isBestseller: {
       type: Boolean,
       default: false,
+      // Sản phẩm bán chạy
     },
 
     // ===========================
-    // ĐÁNH GIÁ & BÌNH LUẬN
+    // ĐÁNH GIÁ (REVIEWS)
     // ===========================
     pRatingsReviews: [
       {
@@ -212,14 +182,8 @@ const furnitureProductSchema = new mongoose.Schema(
         },
         verified: Boolean,
         helpful: {
-          yes: {
-            type: Number,
-            default: 0,
-          },
-          no: {
-            type: Number,
-            default: 0,
-          },
+          yes: { type: Number, default: 0 },
+          no: { type: Number, default: 0 },
         },
         images: [String],
         createdAt: {
@@ -229,25 +193,6 @@ const furnitureProductSchema = new mongoose.Schema(
       },
     ],
 
-    // ===========================
-    // SEO & METADATA
-    // ===========================
-    seo: {
-      title: String,
-      description: String,
-      keywords: [String],
-    },
-    tags: [String],
-    collections: [
-      {
-        type: ObjectId,
-        ref: "collections",
-      },
-    ],
-
-    // ===========================
-    // QUẢN LÝ & AUDIT
-    // ===========================
     createdBy: {
       type: ObjectId,
       ref: "users",
@@ -259,18 +204,17 @@ const furnitureProductSchema = new mongoose.Schema(
     view_count: {
       type: Number,
       default: 0,
+      // Lượt xem
     },
     wishlist_count: {
       type: Number,
       default: 0,
+      // Lượt yêu thích
     },
   },
   { timestamps: true }
 );
 
-// ===========================
-// INDEXES
-// ===========================
 furnitureProductSchema.index({
   pName: "text",
   pDescription: "text",
@@ -281,9 +225,7 @@ furnitureProductSchema.index({ pPrice: 1, pStatus: 1 });
 furnitureProductSchema.index({ isNewProduct: 1, pStatus: 1 });
 furnitureProductSchema.index({ pStatus: 1, createdAt: -1 });
 
-// ===========================
-// METHODS
-// ===========================
+
 furnitureProductSchema.methods.getMainImage = function () {
   const mainImage = this.images.find((img) => img.type === "main");
   return mainImage || this.images[0] || null;
@@ -306,9 +248,6 @@ furnitureProductSchema.methods.getAverageRating = function () {
   return (sum / this.pRatingsReviews.length).toFixed(1);
 };
 
-// ===========================
-// VIRTUAL FIELDS
-// ===========================
 furnitureProductSchema.virtual("discountedPrice").get(function () {
   return this.getPriceAfterDiscount();
 });
@@ -321,9 +260,6 @@ furnitureProductSchema.virtual("reviewCount").get(function () {
   return this.pRatingsReviews.length;
 });
 
-// ===========================
-// PRE-SAVE MIDDLEWARE
-// ===========================
 furnitureProductSchema.pre("save", function (next) {
   // Tự động tạo slug từ pName
   if (this.isModified("pName")) {
@@ -354,9 +290,6 @@ furnitureProductSchema.pre("save", function (next) {
   next();
 });
 
-// ===========================
-// STATIC METHODS
-// ===========================
 
 
 furnitureProductSchema.statics.findNewProducts = function (limit = 10, days = 30) {
