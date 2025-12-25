@@ -138,7 +138,7 @@ export default function ProductsPage() {
       console.log(form);
 
       // Validate required fields
-      if (!form.pName || !form.pPrice || !form.pCost || form.pQuantity === undefined || form.pQuantity === null || !form.pCategory || !form.pStatus) {
+      if (!form.pName || !form.pSKU || !form.pPrice || !form.pCost || form.pQuantity === undefined || form.pQuantity === null || !form.pCategory || !form.pStatus) {
         setSnack({ open: true, message: 'Vui lòng nhập đầy đủ các trường bắt buộc', severity: 'error' });
         setIsLoading2(false);
         return;
@@ -147,6 +147,7 @@ export default function ProductsPage() {
       // Tạo payload JSON
       // Upload new images first
       // Sử dụng trực tiếp URLs đã upload từ state
+
       const imageUrls = imgPreviews;
 
       const payload = {
@@ -446,6 +447,7 @@ export default function ProductsPage() {
                     <TextField
                       fullWidth
                       label="SKU"
+                      required
                       value={form.pSKU || ''}
                       onChange={(e) => setForm((f: any) => ({ ...f, pSKU: e.target.value }))}
                       placeholder="VD: FURN-CHR-001"
