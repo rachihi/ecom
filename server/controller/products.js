@@ -219,7 +219,7 @@ class Product {
       } = req.body;
 
 
-      if (!pName || !pPrice || !pCost || !pCategory || !pStatus) {
+      if (!pName || !pPrice || !pCost || !pCategory || !pStatus || !pSKU) {
         return res.json({ error: "All required fields must be filled" });
       }
 
@@ -385,14 +385,6 @@ class Product {
 
       if (!product) {
         return res.status(404).json({ error: "Product not found" });
-      }
-
-      if (product.images && product.images.length) {
-        const first = product.images[0];
-        const isBase64 = typeof first === "string" && first.length > 100 && /^[A-Za-z0-9+/=]+$/.test(first);
-        if (!isBase64) {
-          Product.deleteImages(product.images, "string");
-        }
       }
 
       // Delete associated warehouse data
