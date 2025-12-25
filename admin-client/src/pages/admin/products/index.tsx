@@ -138,7 +138,7 @@ export default function ProductsPage() {
       console.log(form);
 
       // Validate required fields
-      if (!form.pName || !form.pDescription || !form.pPrice || form.pQuantity === undefined || form.pQuantity === null || !form.pCategory || !form.pStatus) {
+      if (!form.pName || !form.pPrice || !form.pCost || form.pQuantity === undefined || form.pQuantity === null || !form.pCategory || !form.pStatus) {
         setSnack({ open: true, message: 'Vui lòng nhập đầy đủ các trường bắt buộc', severity: 'error' });
         setIsLoading2(false);
         return;
@@ -436,7 +436,7 @@ export default function ProductsPage() {
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
-                      label="Tên sản phẩm *"
+                      label="Tên sản phẩm"
                       required
                       value={form.pName || ''}
                       onChange={(e) => setForm((f: any) => ({ ...f, pName: e.target.value }))}
@@ -475,8 +475,7 @@ export default function ProductsPage() {
                       fullWidth
                       multiline
                       rows={3}
-                      label="Mô tả *"
-                      required
+                      label="Mô tả"
                       value={form.pDescription || ''}
                       onChange={(e) => setForm((f: any) => ({ ...f, pDescription: e.target.value }))}
                     />
@@ -496,9 +495,9 @@ export default function ProductsPage() {
                     <TextField
                       fullWidth
                       type="number"
-                      label="Giá bán (VND) *"
+                      label="Giá bán (VND)"
                       required
-                      value={form.pPrice || 0}
+                      value={form.pPrice || ''}
                       onChange={(e) => setForm((f: any) => ({ ...f, pPrice: Number(e.target.value) }))}
                     />
                   </Grid>
@@ -508,7 +507,8 @@ export default function ProductsPage() {
                       fullWidth
                       type="number"
                       label="Giá vốn (VND)"
-                      value={form.pCost || 0}
+                      value={form.pCost || ''}
+                      required
                       onChange={(e) => setForm((f: any) => ({ ...f, pCost: Number(e.target.value) }))}
                       placeholder="Giá nhập"
                     />
@@ -518,7 +518,7 @@ export default function ProductsPage() {
                       fullWidth
                       type="number"
                       label="Giảm giá (%)"
-                      value={form.pDiscount || 0}
+                      value={form.pDiscount || ''}
                       onChange={(e) => setForm((f: any) => ({ ...f, pDiscount: Number(e.target.value) }))}
                     />
                   </Grid>
@@ -526,10 +526,10 @@ export default function ProductsPage() {
                     <TextField
                       fullWidth
                       type="number"
-                      label="Số lượng tồn *"
+                      label="Số lượng tồn"
                       required
                       disabled={!!form._id}
-                      value={form.pQuantity || 0}
+                      value={form.pQuantity || ''}
                       onChange={(e) => setForm((f: any) => ({ ...f, pQuantity: Number(e.target.value) }))}
                     />
                   </Grid>
@@ -630,7 +630,7 @@ export default function ProductsPage() {
                       type="number"
                       label="Dài (cm)"
                       size="small"
-                      value={form.furniture?.dimensions?.length || 0}
+                      value={form.furniture?.dimensions?.length || ''}
                       onChange={(e) =>
                         setForm((f: any) => ({
                           ...f,
@@ -648,7 +648,7 @@ export default function ProductsPage() {
                       type="number"
                       label="Rộng (cm)"
                       size="small"
-                      value={form.furniture?.dimensions?.width || 0}
+                      value={form.furniture?.dimensions?.width || ''}
                       onChange={(e) =>
                         setForm((f: any) => ({
                           ...f,
@@ -666,7 +666,7 @@ export default function ProductsPage() {
                       type="number"
                       label="Cao (cm)"
                       size="small"
-                      value={form.furniture?.dimensions?.height || 0}
+                      value={form.furniture?.dimensions?.height || ''}
                       onChange={(e) =>
                         setForm((f: any) => ({
                           ...f,
@@ -684,7 +684,7 @@ export default function ProductsPage() {
                       type="number"
                       label="Sâu (cm)"
                       size="small"
-                      value={form.furniture?.dimensions?.depth || 0}
+                      value={form.furniture?.dimensions?.depth || ''}
                       onChange={(e) =>
                         setForm((f: any) => ({
                           ...f,
@@ -742,7 +742,7 @@ export default function ProductsPage() {
               {/* Trạng thái & Hình ảnh */}
               <Box>
                 <Typography variant="h6" sx={{ mb: 1.5 }}>
-                  Khác
+                  Trạng thái
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={6}>
@@ -753,8 +753,8 @@ export default function ProductsPage() {
                       value={form.pStatus || 'Active'}
                       onChange={(e) => setForm((f: any) => ({ ...f, pStatus: e.target.value }))}
                     >
-                      <MenuItem value="Active">Đang bán *</MenuItem>
-                      <MenuItem value="Inactive">Ngưng bán *</MenuItem>
+                      <MenuItem value="Active">Đang bán</MenuItem>
+                      <MenuItem value="Inactive">Ngưng bán</MenuItem>
                     </Select>
                   </Grid>
                   {/* Feature Flags */}

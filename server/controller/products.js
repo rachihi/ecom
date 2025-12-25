@@ -204,9 +204,9 @@ class Product {
         pDescription,
         pShortDescription,
         pPrice,
+        pCost,
         pQuantity,
         pCategory,
-        discount,
         pDiscount,
         pStatus,
         pSKU,
@@ -219,7 +219,7 @@ class Product {
       } = req.body;
 
 
-      if (!pName || !pDescription || !pPrice || !pCategory || !pStatus) {
+      if (!pName || !pPrice || !pCost || !pCategory || !pStatus) {
         return res.json({ error: "All required fields must be filled" });
       }
 
@@ -243,10 +243,9 @@ class Product {
         pDescription,
         pShortDescription,
         pPrice,
-        // pQuantity removed from here
+        pCost,
         pCategory,
-        discount: discount || pDiscount || 0,
-        pDiscount: discount || pDiscount || 0,
+        pDiscount: pDiscount || 0,
         pStatus,
         pSKU,
         images,
@@ -297,7 +296,6 @@ class Product {
         pCost,
         pComparePrice,
         pCategory,
-        discount,
         pDiscount,
         isFeatured,
         isRecommended,
@@ -335,9 +333,9 @@ class Product {
         isNewProduct,
         isBestseller,
         isOnSale,
-        discount: discount || pDiscount || 0,
-        pDiscount: discount || pDiscount || 0,
+        pDiscount: pDiscount || 0,
         pStatus,
+        pCategory
       };
 
       const thumbnailImage = req.body.images.length > 0 ? req.body.images[0] : undefined;

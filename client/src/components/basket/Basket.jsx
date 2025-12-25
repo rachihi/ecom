@@ -118,7 +118,11 @@ const Basket = () => {
           <div className="basket-total">
             <p className="basket-total-title">Tổng tiền:</p>
             <h2 className="basket-total-amount">
-              {displayMoney(calculateTotal(basket.map((product) => (product.price - (product.price * (product.discount || 0) / 100)) * product.quantity)))}
+              {displayMoney(calculateTotal(basket.map((product) => {
+                const productPrice = product.price || product.pPrice || 0;
+                const productDiscount = product.discount || product.pDiscount || 0;
+                return (productPrice - (productPrice * productDiscount / 100)) * product.quantity;
+              })))}
             </h2>
           </div>
           <button

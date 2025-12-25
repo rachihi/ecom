@@ -150,7 +150,7 @@ router.post(
   "/delete-product",
   auth.loginCheck,
   auth.isAdmin,
-  (req, res) => productController.deleteProduct(req, res)
+  (req, res) => productController.getDeleteProduct(req, res)
 );
 
 router.post(

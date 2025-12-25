@@ -217,8 +217,8 @@ export default function PurchaseOrdersPage() {
                       {products.map((p: any) => (<MenuItem key={p._id} value={p._id}>{p.pName}</MenuItem>))}
                     </Select>
                   </Grid>
-                  <Grid item xs={2}><TextField fullWidth type="number" label="SL" value={it.quantity} onChange={(e) => updateItem(idx, { quantity: Math.max(0, Number(e.target.value)) })} InputProps={{ inputProps: { min: 0 } }} /></Grid>
-                  <Grid item xs={3}><TextField fullWidth type="number" label="Giá" value={it.price} onChange={(e) => updateItem(idx, { price: Math.max(0, Number(e.target.value)) })} InputProps={{ inputProps: { min: 0 } }} /></Grid>
+                  <Grid item xs={2}><TextField fullWidth type="number" label="SL" value={it.quantity || ''} onChange={(e) => updateItem(idx, { quantity: Math.max(0, Number(e.target.value)) })} InputProps={{ inputProps: { min: 0 } }} /></Grid>
+                  <Grid item xs={3}><TextField fullWidth type="number" label="Giá" value={it.price || ''} onChange={(e) => updateItem(idx, { price: Math.max(0, Number(e.target.value)) })} InputProps={{ inputProps: { min: 0 } }} /></Grid>
                   <Grid item xs={1}><Button onClick={() => removeItem(idx)}>Xóa</Button></Grid>
                 </Grid>
               ))}
@@ -232,7 +232,7 @@ export default function PurchaseOrdersPage() {
                       fullWidth
                       type="number"
                       label="Số tiền thanh toán"
-                      value={form.payment?.amount || 0}
+                      value={form.payment?.amount || ''}
                       onChange={(e) => setForm((f: any) => ({ ...f, payment: { ...f.payment, amount: Number(e.target.value) } }))}
                       helperText={`Tối đa: ${formatCurrency(totalAmount)}`}
                     />
@@ -288,7 +288,7 @@ export default function PurchaseOrdersPage() {
                 </Select>
               </Grid>
               <Grid item xs={6}><TextField fullWidth type="date" value={payment.paymentDate} onChange={(e) => setPayment((p: any) => ({ ...p, paymentDate: e.target.value }))} /></Grid>
-              <Grid item xs={6}><TextField fullWidth type="number" label="Số tiền" value={payment.amount} onChange={(e) => setPayment((p: any) => ({ ...p, amount: Number(e.target.value) }))} /></Grid>
+              <Grid item xs={6}><TextField fullWidth type="number" label="Số tiền" value={payment.amount || ''} onChange={(e) => setPayment((p: any) => ({ ...p, amount: Number(e.target.value) }))} /></Grid>
               <Grid item xs={6}><TextField fullWidth label="Ghi chú" value={payment.note} onChange={(e) => setPayment((p: any) => ({ ...p, note: e.target.value }))} /></Grid>
             </Grid>
           </DialogContent>

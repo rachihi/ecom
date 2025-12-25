@@ -106,7 +106,7 @@ const SignIn = ({ history }) => {
                           style={{ textDecoration: 'underline' }}
                           to={FORGOT_PASSWORD}
                         >
-                          <span>Quên mật khẩu?</span>
+                          {/* <span>Quên mật khẩu?</span> */}
                         </Link>
                         <button
                           className="button auth-button"

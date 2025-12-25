@@ -186,12 +186,9 @@ class Order {
                 try {
                   await warehouseModel.findOneAndUpdate(
                     { product: item.id },
-                    { $inc: { quantity: -Math.abs(item.quantitiy) }, lastUpdated: Date.now() },
+                    { $inc: { quantity: -Math.abs(item.quantitiy), sold: +Math.abs(item.quantitiy) }, lastUpdated: Date.now() },
                     { upsert: true }
                   );
-                  await productModel.findByIdAndUpdate(item.id, {
-                    $inc: { pSold: Math.abs(item.quantitiy), pQuantity: -Math.abs(item.quantitiy) },
-                  });
                 } catch (stockErr) {
                   console.error("Stock update failed", stockErr);
                 }

@@ -28,9 +28,9 @@ export default function HeaderContent() {
       {!downLG && <Search />}
       {downLG && <Box sx={{ width: '100%', ml: 1 }} />}
 
-      <Notification />
+      {/* <Notification /> */}
       <FullScreen />
-      <Message />
+      {/* <Message /> */}
       {!downLG && <Profile />}
       {downLG && <MobileSection />}
     </>
