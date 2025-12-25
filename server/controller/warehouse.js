@@ -3,7 +3,7 @@ const warehouseModel = require("../models/warehouses");
 class WarehouseController {
   async list(req, res) {
     try {
-      const list = await warehouseModel.find({}).populate("product", "pName pImages pPrice pQuantity").sort({ _id: -1 });
+      const list = await warehouseModel.find({}).populate("product", "pName pImages pPrice").sort({ _id: -1 });
       return res.json({ warehouses: list });
     } catch (err) {
       return res.status(500).json({ error: "Internal server error" });
@@ -13,7 +13,7 @@ class WarehouseController {
   async getByProduct(req, res) {
     const { productId } = req.params;
     try {
-      const doc = await warehouseModel.findOne({ product: productId }).populate("product", "pName pImages pPrice pQuantity");
+      const doc = await warehouseModel.findOne({ product: productId }).populate("product", "pName pImages pPrice");
       if (!doc) return res.status(404).json({ error: "Not found" });
       return res.json({ warehouse: doc });
     } catch (err) {

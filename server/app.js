@@ -28,19 +28,17 @@ const cors = require("cors");
 const authRouter = require("./routes/auth");
 const categoryRouter = require("./routes/categories");
 const productRouter = require("./routes/products");
-const brainTreeRouter = require("./routes/braintree");
 const orderRouter = require("./routes/orders");
 const usersRouter = require("./routes/users");
-const customizeRouter = require("./routes/customize");
 const customersRouter = require("./routes/customers");
+const customerAuthRouter = require("./routes/customerAuth"); // Customer auth routes
 const warehouseRouter = require("./routes/warehouse");
 const suppliersRouter = require("./routes/suppliers");
 const purchaseOrdersRouter = require("./routes/purchaseOrders");
 const paymentsRouter = require("./routes/payments");
+const uploadRoutes = require("./routes/uploads");
 const cashbookRouter = require("./routes/cashbook");
 // Import Auth middleware for check user login or not~
-const posRouter = require("./routes/pos");
-
 const { loginCheck } = require("./middleware/auth");
 const CreateAllFolder = require("./config/uploadFolderCreateScript");
 const swaggerUi = require("swagger-ui-express");
@@ -68,25 +66,24 @@ app.use(morgan("dev"));
 app.use(cookieParser());
 app.use(cors());
 app.use(express.static("public"));
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Routes
-app.use("/api", authRouter);
+app.use("/api", authRouter); // Admin auth (existing)
 app.use("/api/user", usersRouter);
+app.use("/api/customer", customerAuthRouter); // Customer auth (new)
 app.use("/api/category", categoryRouter);
 app.use("/api/product", productRouter);
-app.use("/api", brainTreeRouter);
 app.use("/api/order", orderRouter);
-app.use("/api/customize", customizeRouter);
 app.use("/api/customers", customersRouter);
 app.use("/api/warehouse", warehouseRouter);
 app.use("/api/suppliers", suppliersRouter);
-app.use("/api/pos", posRouter);
 
 app.use("/api/purchase-orders", purchaseOrdersRouter);
 app.use("/api/payments", paymentsRouter);
+app.use("/api/uploads", uploadRoutes);
 app.use("/api/cashbook", cashbookRouter);
 
 // Run Server

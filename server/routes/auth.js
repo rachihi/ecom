@@ -23,6 +23,26 @@ const { loginCheck, isAuth, isAdmin } = require("../middleware/auth");
  *   post:
  *     summary: Sign up
  *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *               - cPassword
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               cPassword:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Signed up
@@ -30,6 +50,20 @@ const { loginCheck, isAuth, isAdmin } = require("../middleware/auth");
  *   post:
  *     summary: Sign in
  *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Signed in
