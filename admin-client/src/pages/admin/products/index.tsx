@@ -504,6 +504,8 @@ export default function ProductsPage() {
                     />
                   </Grid>
 
+
+
                   <Grid item xs={4}>
                     <NumericInput
                       fullWidth
