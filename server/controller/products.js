@@ -280,6 +280,15 @@ class Product {
       });
     } catch (err) {
       console.error(err);
+      if (err.code === 11000) {
+        if (err.keyPattern && err.keyPattern.pSlug) {
+          return res.status(400).json({ error: "Tên sản phẩm đã tồn tại" });
+        }
+        if (err.keyPattern && err.keyPattern.pSKU) {
+          return res.status(400).json({ error: "Mã sản phẩm (SKU) đã tồn tại" });
+        }
+        return res.status(400).json({ error: "Dữ liệu bị trùng lặp (SKU hoặc Tên)" });
+      }
       return res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -368,6 +377,15 @@ class Product {
       });
     } catch (err) {
       console.error(err);
+      if (err.code === 11000) {
+        if (err.keyPattern && err.keyPattern.pSlug) {
+          return res.status(400).json({ error: "Tên sản phẩm đã tồn tại" });
+        }
+        if (err.keyPattern && err.keyPattern.pSKU) {
+          return res.status(400).json({ error: "Mã sản phẩm (SKU) đã tồn tại" });
+        }
+        return res.status(400).json({ error: "Dữ liệu bị trùng lặp (SKU hoặc Tên)" });
+      }
       return res.status(500).json({ error: "Internal server error" });
     }
   }

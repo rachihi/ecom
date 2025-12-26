@@ -3,7 +3,8 @@ import useSWR from 'swr';
 import axios from 'utils/axios';
 import { useDebounce } from 'hooks/useDebounce';
 
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, TablePagination } from '@mui/material';
+import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, Snackbar, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, TablePagination } from '@mui/material';
+import { isValidEmail, isValidPhone } from 'utils/validation';
 import MainCard from 'components/MainCard';
 
 interface SupplierForm {
@@ -30,15 +31,26 @@ export default function SuppliersPage() {
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<SupplierForm>(emptyForm);
+  const [snack, setSnack] = useState<{ open: boolean, message: string, severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
 
   const handleOpenCreate = () => { setForm(emptyForm); setOpen(true); };
   const handleOpenEdit = (row: SupplierForm) => { setForm(row); setOpen(true); };
   const handleClose = () => setOpen(false);
 
   const handleSave = async () => {
-    if (form._id) await axios.put(`/api/suppliers/${form._id}`, form);
-    else await axios.post(`/api/suppliers`, form);
-    setOpen(false); mutate();
+    if ((form.email && !isValidEmail(form.email)) || (form.phone && !isValidPhone(form.phone))) {
+      return;
+    }
+
+    try {
+      if (form._id) await axios.put(`/api/suppliers/${form._id}`, form);
+      else await axios.post(`/api/suppliers`, form);
+      setOpen(false);
+      setSnack({ open: true, message: 'Đã lưu thành công', severity: 'success' });
+      mutate();
+    } catch (e: any) {
+      setSnack({ open: true, message: e?.response?.data?.error || 'Lỗi lưu nhà cung cấp', severity: 'error' });
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -107,8 +119,22 @@ export default function SuppliersPage() {
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField label="Tên" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} fullWidth />
-            <TextField label="Điện thoại" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} fullWidth />
-            <TextField label="Email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} fullWidth />
+            <TextField
+              label="Điện thoại"
+              value={form.phone}
+              onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+              fullWidth
+              error={!!form.phone && !isValidPhone(form.phone)}
+              helperText={!!form.phone && !isValidPhone(form.phone) ? 'Số điện thoại không hợp lệ' : ''}
+            />
+            <TextField
+              label="Email"
+              value={form.email}
+              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+              fullWidth
+              error={!!form.email && !isValidEmail(form.email)}
+              helperText={!!form.email && !isValidEmail(form.email) ? 'Email không hợp lệ' : ''}
+            />
             <TextField label="Địa chỉ" value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} fullWidth />
             <TextField label="MST" value={form.taxCode} onChange={(e) => setForm((f) => ({ ...f, taxCode: e.target.value }))} fullWidth />
           </Stack>
@@ -118,6 +144,11 @@ export default function SuppliersPage() {
           <Button onClick={handleSave} variant="contained">Lưu</Button>
         </DialogActions>
       </Dialog>
+      <Snackbar open={snack.open} autoHideDuration={3000} onClose={() => setSnack((s) => ({ ...s, open: false }))}>
+        <Alert onClose={() => setSnack((s) => ({ ...s, open: false }))} severity={snack.severity} sx={{ width: '100%' }}>
+          {snack.message}
+        </Alert>
+      </Snackbar>
     </MainCard>
   );
 }

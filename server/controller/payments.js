@@ -11,11 +11,11 @@ async function recalcOrderPayment(orderId) {
       { $match: { order: oid } },
       { $group: { _id: "$order", totalPaid: { $sum: "$amount" } } },
     ]);
-    const totalPaid = payments && payments[0] ? payments[0].totalPaid : 0;
+    const totalPaid = payments && payments[0] ? Math.round(payments[0].totalPaid) : 0;
     const order = await orderModel.findById(orderId);
     if (!order) return { totalPaid, remaining: 0 };
-    const remaining = Math.max(order.amount - totalPaid, 0);
-    const nextStatus = totalPaid >= order.amount ? "Paid" : totalPaid > 0 ? "Partial" : "Unpaid";
+    const remaining = Math.max(Math.round(order.amount - totalPaid), 0);
+    const nextStatus = totalPaid >= Math.round(order.amount) ? "Paid" : totalPaid > 0 ? "Partial" : "Unpaid";
     if (order.paymentStatus !== nextStatus) {
       order.paymentStatus = nextStatus;
       await order.save();
@@ -33,10 +33,10 @@ async function recalcPurchasePayment(purchaseOrderId) {
       { $match: { purchaseOrder: pid } },
       { $group: { _id: "$purchaseOrder", totalPaid: { $sum: "$amount" } } },
     ]);
-    const totalPaid = payments && payments[0] ? payments[0].totalPaid : 0;
+    const totalPaid = payments && payments[0] ? Math.round(payments[0].totalPaid) : 0;
     const po = await purchaseOrderModel.findById(purchaseOrderId);
     if (!po) return { totalPaid, remaining: 0 };
-    const remaining = Math.max(po.totalAmount - totalPaid, 0);
+    const remaining = Math.max(Math.round(po.totalAmount - totalPaid), 0);
     return { totalPaid, remaining };
   } catch (e) {
     return { totalPaid: 0, remaining: 0 };
@@ -51,7 +51,7 @@ class PaymentsController {
       const limit = Math.min(parseInt(req.query.limit) || 10, 100);
       const q = (req.query.q || '').trim();
       const base = { order: orderId };
-      const filter = q ? { ...base, $or: [ { note: { $regex: q, $options: 'i' } }, { paymentMethod: { $regex: q, $options: 'i' } } ] } : base;
+      const filter = q ? { ...base, $or: [{ note: { $regex: q, $options: 'i' } }, { paymentMethod: { $regex: q, $options: 'i' } }] } : base;
       const total = await paymentModel.countDocuments(filter);
       const payments = await paymentModel
         .find(filter)
@@ -72,7 +72,7 @@ class PaymentsController {
       const limit = Math.min(parseInt(req.query.limit) || 10, 100);
       const q = (req.query.q || '').trim();
       const base = { purchaseOrder: purchaseOrderId };
-      const filter = q ? { ...base, $or: [ { note: { $regex: q, $options: 'i' } }, { paymentMethod: { $regex: q, $options: 'i' } } ] } : base;
+      const filter = q ? { ...base, $or: [{ note: { $regex: q, $options: 'i' } }, { paymentMethod: { $regex: q, $options: 'i' } }] } : base;
       const total = await paymentModel.countDocuments(filter);
       const payments = await paymentModel
         .find(filter)

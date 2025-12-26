@@ -32,6 +32,7 @@ import {
 } from '@mui/material';
 import MainCard from 'components/MainCard';
 import { uploadImage } from 'utils/upload';
+import NumericInput from 'components/NumericInput';
 
 interface ProductRow {
   _id: string;
@@ -202,7 +203,7 @@ export default function ProductsPage() {
     } catch (error: any) {
       setSnack({
         open: true,
-        message: error?.response?.data?.message || 'Lỗi: không thể lưu sản phẩm',
+        message: error?.error || error?.message || 'Lỗi: không thể lưu sản phẩm',
         severity: 'error'
       });
     } finally {
@@ -494,34 +495,31 @@ export default function ProductsPage() {
                     />
                   </Grid>
                   <Grid item xs={3}>
-                    <TextField
+                    <NumericInput
                       fullWidth
-                      type="number"
                       label="Giá bán (VND)"
                       required
-                      value={form.pPrice || ''}
-                      onChange={(e) => setForm((f: any) => ({ ...f, pPrice: Number(e.target.value) }))}
+                      value={form.pPrice || 0}
+                      onChange={(val) => setForm((f: any) => ({ ...f, pPrice: val }))}
                     />
                   </Grid>
 
                   <Grid item xs={4}>
-                    <TextField
+                    <NumericInput
                       fullWidth
-                      type="number"
                       label="Giá vốn (VND)"
-                      value={form.pCost || ''}
+                      value={form.pCost || 0}
                       required
-                      onChange={(e) => setForm((f: any) => ({ ...f, pCost: Number(e.target.value) }))}
+                      onChange={(val) => setForm((f: any) => ({ ...f, pCost: val }))}
                       placeholder="Giá nhập"
                     />
                   </Grid>
                   <Grid item xs={4}>
-                    <TextField
+                    <NumericInput
                       fullWidth
-                      type="number"
                       label="Giảm giá (%)"
-                      value={form.pDiscount || ''}
-                      onChange={(e) => setForm((f: any) => ({ ...f, pDiscount: Number(e.target.value) }))}
+                      value={form.pDiscount || 0}
+                      onChange={(val) => setForm((f: any) => ({ ...f, pDiscount: Math.min(100, val) }))}
                     />
                   </Grid>
                   <Grid item xs={6}>

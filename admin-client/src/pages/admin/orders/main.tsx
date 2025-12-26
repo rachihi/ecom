@@ -4,8 +4,9 @@ import axios from 'utils/axios';
 import { useDebounce } from 'hooks/useDebounce';
 import { formatCurrency } from 'utils/format';
 
-import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Select, Snackbar, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography, TextField, TablePagination } from '@mui/material';
+import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Select, Snackbar, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography, TextField, TablePagination, Grid } from '@mui/material';
 import MainCard from 'components/MainCard';
+import NumericInput from 'components/NumericInput';
 
 interface OrderRow {
   _id: string;
@@ -58,18 +59,23 @@ export default function OrdersPage() {
   const payments: any[] = payData?.payments || [];
   const summary = payData?.summary || { totalPaid: 0, remaining: 0 };
   const [payOpen, setPayOpen] = useState(false);
-  const [payAmount, setPayAmount] = useState(0);
+  const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
+  const [payAmount, setPayAmount] = useState<number>(0);
   const [payMethod, setPayMethod] = useState('Cash');
   const [payNote, setPayNote] = useState('');
 
   const submitPayment = async () => {
     try {
       if (!detailRow) return;
+      if (payAmount > summary.remaining) {
+        setSnack({ open: true, message: 'Số tiền thanh toán không được vượt quá số tiền còn lại', severity: 'error' });
+        return;
+      }
       await axios.post('/api/payments', {
         order: detailRow._id,
         amount: payAmount,
         paymentMethod: payMethod,
-        paymentDate: new Date(),
+        paymentDate: payDate,
         note: payNote
       });
       setSnack({ open: true, message: 'Thêm thanh toán thành công', severity: 'success' });
@@ -277,17 +283,51 @@ export default function OrdersPage() {
           <Button onClick={() => setDetailOpen(false)}>Đóng</Button>
         </DialogActions>
 
-        <Dialog open={payOpen} onClose={() => setPayOpen(false)}>
-          <DialogTitle>Thêm thanh toán</DialogTitle>
+        <Dialog open={payOpen} onClose={() => setPayOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Thanh toán đơn hàng</DialogTitle>
           <DialogContent>
-            <Stack spacing={2} sx={{ mt: 1, minWidth: 300 }}>
-              <TextField label="Số tiền" type="number" value={payAmount} onChange={(e) => setPayAmount(Number(e.target.value))} fullWidth />
-              <Select value={payMethod} onChange={(e) => setPayMethod(e.target.value)} fullWidth>
-                <MenuItem value="Cash">Tiền mặt</MenuItem>
-                <MenuItem value="BankTransfer">Chuyển khoản</MenuItem>
-              </Select>
-              <TextField label="Ghi chú" value={payNote} onChange={(e) => setPayNote(e.target.value)} fullWidth />
-            </Stack>
+            <Typography sx={{ mb: 2 }}>Còn lại: {formatCurrency(summary.remaining)}</Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Select
+                  value={payMethod}
+                  onChange={(e) => setPayMethod(e.target.value)}
+                  fullWidth
+                  size="small"
+                >
+                  <MenuItem value="Cash">Tiền mặt</MenuItem>
+                  <MenuItem value="BankTransfer">Chuyển khoản</MenuItem>
+                </Select>
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  type="date"
+                  value={payDate}
+                  onChange={(e) => setPayDate(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <NumericInput
+                  label="Số tiền"
+                  value={payAmount}
+                  onChange={(val) => setPayAmount(val)}
+                  fullWidth
+                  size="small"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Ghi chú"
+                  value={payNote}
+                  onChange={(e) => setPayNote(e.target.value)}
+                  fullWidth
+                  size="small"
+                />
+              </Grid>
+            </Grid>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setPayOpen(false)}>Huỷ</Button>
