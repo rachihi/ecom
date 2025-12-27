@@ -33,6 +33,8 @@ import {
 import MainCard from 'components/MainCard';
 import { uploadImage } from 'utils/upload';
 import NumericInput from 'components/NumericInput';
+import ExportButton from 'components/actions/ExportButton';
+import ImportButton from 'components/actions/ImportButton';
 
 interface ProductRow {
   _id: string;
@@ -98,6 +100,7 @@ export default function ProductsPage() {
   const [imgPreviews, setImgPreviews] = useState<string[]>([]);
   const [isLoading2, setIsLoading2] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   const startCreate = () => {
     setForm({
@@ -227,15 +230,67 @@ export default function ProductsPage() {
     }
   };
 
+  // Export Logic
+  const handleExport = async (type: 'all' | 'filtered' | 'template') => {
+    try {
+      let url = '/api/product/export?type=' + type;
+      if (type === 'filtered') {
+        const search = q.trim();
+        if (search) url += '&search=' + encodeURIComponent(search);
+        if (filterCategory) url += '&category=' + filterCategory;
+        if (filterStatus) url += '&status=' + filterStatus;
+      }
+
+      const response = await axios.get(url, { responseType: 'blob' });
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `products_${type}_${new Date().getTime()}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      setSnack({ open: true, message: 'Lỗi khi xuất file', severity: 'error' });
+    }
+  };
+
+  // Import Logic
+  const handleImport = async (file: File) => {
+    setIsImporting(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await axios.post('/api/product/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.errors && res.data.errors.length > 0) {
+        alert('Có lỗi khi nhập:\n' + res.data.errors.join('\n'));
+      }
+      setSnack({ open: true, message: res.data.message || 'Nhập file thành công', severity: 'success' });
+      mutate();
+    } catch (error: any) {
+      setSnack({ open: true, message: error?.response?.data?.error || 'Lỗi nhập file', severity: 'error' });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   return (
     <>
 
       <MainCard
         title="Sản phẩm"
         secondary={
-          <Button variant="contained" onClick={startCreate}>
-            Thêm sản phẩm
-          </Button>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <ExportButton
+              onExportAll={() => handleExport('all')}
+              onExportFiltered={() => handleExport('filtered')}
+            />
+            <ImportButton onImport={handleImport} isLoading={isImporting} onDownloadTemplate={() => handleExport('template')} />
+            <Button variant="contained" onClick={startCreate}>{'Thêm sản phẩm'}</Button>
+          </Stack>
         }
       >
         <Stack direction="row" spacing={1} sx={{ mb: 2 }}>

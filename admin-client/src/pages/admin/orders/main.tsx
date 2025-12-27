@@ -7,6 +7,7 @@ import { formatCurrency } from 'utils/format';
 import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Select, Snackbar, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography, TextField, TablePagination, Grid } from '@mui/material';
 import MainCard from 'components/MainCard';
 import NumericInput from 'components/NumericInput';
+import ExportButton from 'components/actions/ExportButton';
 
 interface OrderRow {
   _id: string;
@@ -168,9 +169,29 @@ export default function OrdersPage() {
     }
   };
 
+  // Export Logic
+  const handleExport = async (type: 'all' | 'filtered') => {
+    try {
+      let url = '/api/order/export?type=' + type;
+      if (type === 'filtered' && debouncedQ) {
+        url += '&q=' + encodeURIComponent(debouncedQ);
+      }
+      const response = await axios.get(url, { responseType: 'blob' });
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `orders_${type}_${new Date().getTime()}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      setSnack({ open: true, message: 'Lỗi xuất file', severity: 'error' });
+    }
+  };
 
   return (
-    <MainCard title="Đơn hàng">
+    <MainCard title="Đơn hàng" secondary={<ExportButton onExportAll={() => handleExport('all')} onExportFiltered={() => handleExport('filtered')} />}>
       {isLoading && <Typography>Đang tải...</Typography>}
       <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
         <TextField
@@ -220,8 +241,8 @@ export default function OrdersPage() {
               <TableCell>{tStatus(row.paymentStatus)}</TableCell>
               <TableCell align="right">
                 <Stack direction="row" spacing={1} justifyContent="flex-end">
-                  <Button size="small" onClick={() => { setDetailRow(row); setDetailOpen(true); }}>Chi tiết</Button>
-                  <Button size="small" color="error" onClick={() => askDelete(row._id)}>Xoá</Button>
+                  <Button size="small" variant="outlined" onClick={() => { setDetailRow(row); setDetailOpen(true); }}>Chi tiết</Button>
+                  <Button size="small" variant="outlined" color="error" onClick={() => askDelete(row._id)}>Xoá</Button>
                 </Stack>
               </TableCell>
             </TableRow>

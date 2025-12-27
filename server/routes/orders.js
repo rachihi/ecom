@@ -103,6 +103,7 @@ const customerAuthMiddleware = require("../middleware/customerAuth");
  *         description: Deleted
  */
 router.get("/get-all-orders", ordersController.getAllOrders);
+router.get("/export", ordersController.getExportOrders); // Add this
 router.post("/order-by-user", ordersController.getOrderByUser);
 router.get("/me", customerAuthMiddleware, ordersController.getOrdersByCustomer);
 

@@ -252,6 +252,62 @@ class PurchaseOrdersController {
       return res.status(500).json({ error: "Internal server error" });
     }
   }
+
+  // ===========================
+  // EXPORT ONLY
+  // ===========================
+
+  async getExportPurchaseOrder(req, res) {
+    try {
+      const excelHandler = require("../utils/excelHandler");
+
+      const q = (req.query.q || '').trim();
+      const type = req.query.type || 'all';
+
+      let filter = {};
+      if (type === 'filtered' && q) {
+        const supplierModel = require("../models/suppliers");
+        const sups = await supplierModel.find({ name: { $regex: q, $options: 'i' } }).select('_id');
+        const ids = sups.map((s) => s._id);
+        filter.supplier = { $in: ids.length ? ids : [null] };
+      }
+
+      const list = await purchaseOrderModel
+        .find(filter)
+        .populate("supplier")
+        .sort({ _id: -1 });
+
+      const data = list.map(po => ({
+        orderCode: po.orderCode,
+        supplierName: po.supplier ? po.supplier.name : 'Unknown',
+        totalAmount: po.totalAmount,
+        status: po.status,
+        warehouseStatus: po.warehouseStatus,
+        paymentStatus: po.paymentStatus,
+        createdAt: po.createdAt ? po.createdAt.toISOString().split('T')[0] : ''
+      }));
+
+      const columns = [
+        { header: 'Code', key: 'orderCode', width: 20 },
+        { header: 'Supplier', key: 'supplierName', width: 25 },
+        { header: 'Total Amount', key: 'totalAmount', width: 15 },
+        { header: 'Status', key: 'status', width: 15 },
+        { header: 'Warehouse', key: 'warehouseStatus', width: 15 },
+        { header: 'Payment', key: 'paymentStatus', width: 15 },
+        { header: 'Created At', key: 'createdAt', width: 15 },
+      ];
+
+      const buffer = await excelHandler.generateExcel(data, columns, 'Purchase Orders');
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=purchase_orders_${type}_${Date.now()}.xlsx`);
+      return res.send(buffer);
+
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
 }
 
 module.exports = new PurchaseOrdersController();

@@ -594,6 +594,310 @@ class Product {
       return res.status(500).json({ error: "Internal server error" });
     }
   }
+  static async getTopRated(req, res) {
+    try {
+      const limit = parseInt(req.query.limit) || 12;
+      const products = await productModel.findTopRated(limit);
+      return res.json({ success: true, data: products });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  // ===========================
+  // IMPORT / EXPORT
+  // ===========================
+
+  static async getExportProduct(req, res) {
+    try {
+      const excelHandler = require("../utils/excelHandler");
+      const categoryModel = require("../models/categories");
+
+      let filter = {};
+      const type = req.query.type || 'all';
+
+      // Define columns for template (and export)
+      const templateColumns = [
+        { header: 'Product Name', key: 'pName', width: 30 },
+        { header: 'Description', key: 'pDescription', width: 30 },
+        { header: 'Price', key: 'pPrice', width: 15 },
+        { header: 'Cost', key: 'pCost', width: 15 },
+        { header: 'Quantity', key: 'pQuantity', width: 15 },
+        { header: 'Category', key: 'pCategory', width: 20 },
+        { header: 'Product Code', key: 'pSKU', width: 20 },
+        { header: 'Status', key: 'pStatus', width: 15 },
+        { header: 'Offer', key: 'pOffer', width: 10 },
+      ];
+
+      if (type === 'template') {
+        const buffer = await excelHandler.generateExcel([], templateColumns, 'Products Template');
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=products_template.xlsx`);
+        return res.send(buffer);
+      }
+
+      if (type === 'filtered') {
+        // Reuse filter logic from getAllProduct
+        const search = (req.query.search || req.query.q || "").trim();
+        if (search) {
+          filter.$or = [
+            { pName: { $regex: search, $options: "i" } },
+            { pDescription: { $regex: search, $options: "i" } },
+            { pSKU: { $regex: search, $options: "i" } },
+          ];
+        }
+        if (req.query.category && mongoose.Types.ObjectId.isValid(req.query.category)) {
+          filter.pCategory = new mongoose.Types.ObjectId(req.query.category);
+        }
+        if (req.query.status) {
+          filter.pStatus = { $in: [req.query.status, req.query.status.charAt(0).toUpperCase() + req.query.status.slice(1)] };
+        }
+      }
+
+      // We need to look up category names and warehouse quantities
+      // Reusing aggregation pipeline for data consistency
+      const pipeline = [
+        { $match: filter },
+        {
+          $lookup: {
+            from: "warehouses",
+            localField: "_id",
+            foreignField: "product",
+            as: "warehouse",
+          },
+        },
+        {
+          $unwind: {
+            path: "$warehouse",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $addFields: {
+            pQuantity: { $ifNull: ["$warehouse.quantity", 0] },
+            pSold: { $ifNull: ["$warehouse.sold", 0] },
+          },
+        },
+        {
+          $lookup: {
+            from: "categories",
+            localField: "pCategory",
+            foreignField: "_id",
+            as: "pCategoryVal" // Rename to avoid conflict if any, though usually fine
+          }
+        },
+        {
+          $unwind: {
+            path: "$pCategoryVal",
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        { $sort: { createdAt: -1 } }
+      ];
+
+      const products = await productModel.aggregate(pipeline);
+
+      const data = products.map(p => ({
+        pName: p.pName,
+        pSKU: p.pSKU,
+        pCategory: p.pCategoryVal ? p.pCategoryVal.cName : '',
+        pPrice: p.pPrice,
+        pCost: p.pCost,
+        pQuantity: p.pQuantity,
+        pStatus: p.pStatus,
+        pDescription: p.pDescription || '',
+        pShortDescription: p.pShortDescription || '',
+        // Furniture details
+        material_primary: p.furniture?.material?.primary || '',
+        material_secondary: p.furniture?.material?.secondary ? p.furniture.material.secondary.join(', ') : '',
+        dim_length: p.furniture?.dimensions?.length || 0,
+        dim_width: p.furniture?.dimensions?.width || 0,
+        dim_height: p.furniture?.dimensions?.height || 0,
+        dim_depth: p.furniture?.dimensions?.depth || 0,
+        isFeatured: p.isFeatured ? 'Yes' : 'No',
+        isNewProduct: p.isNewProduct ? 'Yes' : 'No',
+        isBestseller: p.isBestseller ? 'Yes' : 'No'
+      }));
+
+      const columns = [
+        { header: 'Name', key: 'pName', width: 30 },
+        { header: 'SKU', key: 'pSKU', width: 15 },
+        { header: 'Category', key: 'pCategory', width: 20 },
+        { header: 'Price', key: 'pPrice', width: 15 },
+        { header: 'Cost', key: 'pCost', width: 15 },
+        { header: 'Quantity', key: 'pQuantity', width: 15 },
+        { header: 'Status', key: 'pStatus', width: 15 },
+        { header: 'Description', key: 'pDescription', width: 40 },
+        { header: 'Short Desc', key: 'pShortDescription', width: 30 },
+        { header: 'Material (Primary)', key: 'material_primary', width: 20 },
+        { header: 'Material (Secondary)', key: 'material_secondary', width: 20 },
+        { header: 'Length', key: 'dim_length', width: 10 },
+        { header: 'Width', key: 'dim_width', width: 10 },
+        { header: 'Height', key: 'dim_height', width: 10 },
+        { header: 'Depth', key: 'dim_depth', width: 10 },
+        { header: 'Featured', key: 'isFeatured', width: 10 },
+        { header: 'New', key: 'isNewProduct', width: 10 },
+        { header: 'Bestseller', key: 'isBestseller', width: 10 },
+      ];
+
+      const buffer = await excelHandler.generateExcel(data, columns, 'Products');
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=products_${type}_${Date.now()}.xlsx`);
+      return res.send(buffer);
+
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  static async postImportProduct(req, res) {
+    try {
+      const excelHandler = require("../utils/excelHandler");
+      const categoryModel = require("../models/categories");
+
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      const buffer = fs.readFileSync(req.file.path);
+
+      const columnMapping = {
+        'Product Name': 'pName',
+        'Name': 'pName', // Fallback
+        'Product Code': 'pSKU',
+        'SKU': 'pSKU', // Fallback
+        'Category': 'pCategoryName',
+        'Price': 'pPrice',
+        'Cost': 'pCost',
+        'Quantity': 'pQuantity',
+        'Status': 'pStatus',
+        'Description': 'pDescription',
+        'Short Desc': 'pShortDescription',
+        'Offer': 'pOffer',
+        'Material (Primary)': 'material_primary',
+        'Material (Secondary)': 'material_secondary',
+        'Length': 'dim_length',
+        'Width': 'dim_width',
+        'Height': 'dim_height',
+        'Depth': 'dim_depth',
+        'Featured': 'isFeatured',
+        'New': 'isNewProduct',
+        'Bestseller': 'isBestseller',
+      };
+
+      const records = await excelHandler.parseExcel(buffer, columnMapping);
+
+      let successCount = 0;
+      let errorCount = 0;
+      const errors = [];
+
+      for (const record of records) {
+        try {
+          if (!record.pName || !record.pPrice) continue;
+
+          // Find Category
+          let categoryId = null;
+          if (record.pCategoryName) {
+            const cat = await categoryModel.findOne({ cName: { $regex: new RegExp(`^${record.pCategoryName}$`, 'i') } });
+            if (cat) categoryId = cat._id;
+          }
+
+          // If no category found but pCategoryName exists, maybe create it? 
+          // For now, if no category found, skip or assign default? 
+          // User requirement didn't specify, I will require category.
+          if (!categoryId && record.pCategoryName) {
+            // Optional: Create new category
+            // const newCat = await new categoryModel({ cName: record.pCategoryName, cStatus: 'Active' }).save();
+            // categoryId = newCat._id;
+          }
+
+          if (!categoryId) {
+            // Try to find ANY category to assign as default if missing, or skip
+            // errors.push(`Category ${record.pCategoryName} not found for ${record.pName}`);
+            // continue;
+
+            // Fallback: get first category
+            const firstCat = await categoryModel.findOne();
+            if (firstCat) categoryId = firstCat._id;
+          }
+
+          const productData = {
+            pName: record.pName,
+            pSKU: record.pSKU, // Will be auto-generated if missing by model pre-save
+            pPrice: parseFloat(record.pPrice),
+            pCost: parseFloat(record.pCost || 0),
+            pCategory: categoryId,
+            pStatus: record.pStatus || 'Active',
+            pDescription: record.pDescription,
+            pShortDescription: record.pShortDescription,
+            furniture: {
+              dimensions: {
+                length: parseFloat(record.dim_length || 0),
+                width: parseFloat(record.dim_width || 0),
+                height: parseFloat(record.dim_height || 0),
+                depth: parseFloat(record.dim_depth || 0),
+              },
+              material: {
+                primary: record.material_primary,
+                secondary: record.material_secondary ? String(record.material_secondary).split(',').map(s => s.trim()) : []
+              }
+            },
+            isFeatured: record.isFeatured === 'Yes',
+            isNewProduct: record.isNewProduct === 'Yes',
+            isBestseller: record.isBestseller === 'Yes',
+          };
+
+          // Update or Create based on SKU
+          if (record.pSKU) {
+            const existing = await productModel.findOne({ pSKU: record.pSKU });
+            if (existing) {
+              await productModel.findByIdAndUpdate(existing._id, productData);
+              // Update Warehouse
+              await warehouseModel.findOneAndUpdate(
+                { product: existing._id },
+                { quantity: parseInt(record.pQuantity || 0) },
+                { upsert: true }
+              );
+              successCount++;
+              continue;
+            }
+          }
+
+          // Create new
+          const newProduct = new productModel(productData);
+          const saved = await newProduct.save();
+          // Create Warehouse
+          await warehouseModel.findOneAndUpdate(
+            { product: saved._id },
+            { quantity: parseInt(record.pQuantity || 0), sold: 0 },
+            { upsert: true }
+          );
+          successCount++;
+
+        } catch (err) {
+          console.error(err);
+          errorCount++;
+          errors.push(`Error importing ${record.pName}: ${err.message}`);
+        }
+      }
+
+      // Cleanup uploaded file
+      fs.unlinkSync(req.file.path);
+
+      return res.json({
+        success: true,
+        message: `Imported ${successCount} products successfully. ${errorCount} errors.`,
+        errors
+      });
+
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
 }
 
 module.exports = Product;

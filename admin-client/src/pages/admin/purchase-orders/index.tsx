@@ -7,6 +7,7 @@ import { formatCurrency } from 'utils/format';
 import { Alert, Autocomplete, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Grid, MenuItem, Radio, RadioGroup, Select, Snackbar, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TextField, Typography } from '@mui/material';
 import MainCard from 'components/MainCard';
 import NumericInput from 'components/NumericInput';
+import ExportButton from 'components/actions/ExportButton';
 
 interface PurchaseOrderRow { _id: string; orderCode?: string; supplier: any; items?: any[]; details?: any[]; totalAmount: number; totalPaid?: number; status: string; warehouseStatus: string; paymentStatus: string; createdAt?: string; totalQuantity?: number }
 
@@ -113,10 +114,39 @@ export default function PurchaseOrdersPage() {
     }
   };
 
+  // Export Logic
+  const handleExport = async (type: 'all' | 'filtered') => {
+    try {
+      let url = '/api/purchase-orders/export?type=' + type;
+      if (type === 'filtered' && debouncedQ) {
+        url += '&q=' + encodeURIComponent(debouncedQ);
+      }
+      const response = await axios.get(url, { responseType: 'blob' });
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `purchase_orders_${type}_${new Date().getTime()}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      setSnack({ open: true, message: 'Lỗi xuất file', severity: 'error' });
+    }
+  };
+
   return (
     <>
 
-      <MainCard title="Đơn nhập hàng" secondary={<Button variant="contained" onClick={startCreate}>Thêm</Button>}>
+      <MainCard
+        title="Đơn nhập hàng"
+        secondary={
+          <Stack direction="row" spacing={2} alignItems="center">
+            <ExportButton onExportAll={() => handleExport('all')} onExportFiltered={() => handleExport('filtered')} />
+            <Button variant="contained" onClick={startCreate}>Thêm</Button>
+          </Stack>
+        }
+      >
         <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
           <TextField size="small" placeholder="Tìm kiếm đơn nhập hàng" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} />
         </Stack>
@@ -156,11 +186,11 @@ export default function PurchaseOrdersPage() {
                   <TableCell>{row.createdAt && new Date(row.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell align="right">
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
-                      <Button size="small" onClick={() => openDetail(row)}>Chi tiết</Button>
-                      <Button size="small" onClick={() => startEdit(row)} disabled={row.paymentStatus !== 'Unpaid' || row.warehouseStatus === 'Received'}>Sửa</Button>
-                      <Button size="small" onClick={() => openPay(row)} disabled={row.paymentStatus === 'Paid'}>Thanh toán</Button>
-                      <Button size="small" onClick={() => markReceived(row)} disabled={row.warehouseStatus === 'Received'}>Nhập kho</Button>
-                      <Button size="small" color="error" onClick={() => askDelete(row._id)}>Xóa</Button>
+                      <Button size="small" variant="outlined" onClick={() => openDetail(row)}>Chi tiết</Button>
+                      <Button size="small" variant="outlined" onClick={() => startEdit(row)} disabled={row.paymentStatus !== 'Unpaid' || row.warehouseStatus === 'Received'}>Sửa</Button>
+                      <Button size="small" variant="outlined" onClick={() => openPay(row)} disabled={row.paymentStatus === 'Paid'}>Thanh toán</Button>
+                      <Button size="small" variant="outlined" onClick={() => markReceived(row)} disabled={row.warehouseStatus === 'Received'}>Nhập kho</Button>
+                      <Button size="small" variant="outlined" color="error" onClick={() => askDelete(row._id)}>Xóa</Button>
                     </Stack>
                   </TableCell>
                 </TableRow>
