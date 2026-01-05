@@ -5,6 +5,7 @@ const cashbookController = require("../controller/cashbook");
 
 // List cashbook entries (optionally filter by from/to dates)
 router.get("/", loginCheck, cashbookController.list);
+router.get("/export", loginCheck, cashbookController.getExportCashbook);
 
 module.exports = router;
 

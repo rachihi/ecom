@@ -6,6 +6,8 @@ import { formatCurrency } from 'utils/format';
 
 import { Alert, Autocomplete, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Grid, MenuItem, Radio, RadioGroup, Select, Snackbar, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TextField, Typography } from '@mui/material';
 import MainCard from 'components/MainCard';
+import NumericInput from 'components/NumericInput';
+import ExportButton from 'components/actions/ExportButton';
 
 interface PurchaseOrderRow { _id: string; orderCode?: string; supplier: any; items?: any[]; details?: any[]; totalAmount: number; totalPaid?: number; status: string; warehouseStatus: string; paymentStatus: string; createdAt?: string; totalQuantity?: number }
 
@@ -54,6 +56,10 @@ export default function PurchaseOrdersPage() {
       const body: any = { supplier: form.supplier, items: form.items, totalAmount };
       // Include payment if creating new order and payment amount > 0
       if (!form._id && form.payment && Number(form.payment.amount) > 0) {
+        if (Number(form.payment.amount) > totalAmount) {
+          setSnack({ open: true, message: 'Số tiền thanh toán không được vượt quá tổng tiền đơn hàng', severity: 'error' });
+          return;
+        }
         body.payment = form.payment;
       }
       if (!form._id) await axios.post('/api/purchase-orders/', body);
@@ -94,20 +100,53 @@ export default function PurchaseOrdersPage() {
   const createPayment = async () => {
     if (!payRow) return;
     try {
+      if (payment.amount > remaining) {
+        setSnack({ open: true, message: 'Số tiền thanh toán không được vượt quá số tiền còn lại', severity: 'error' });
+        return;
+      }
       await axios.post('/api/payments/', { purchaseOrder: payRow._id, ...payment });
       setSnack({ open: true, message: 'Đã tạo thanh toán', severity: 'success' });
+      setPayOpen(false);
       await mutatePay();
       mutate();
-      if ((payData?.summary?.remaining ?? 0) <= 0) setPayOpen(false);
     } catch (e: any) {
       setSnack({ open: true, message: e?.response?.data?.error || 'Lỗi tạo thanh toán', severity: 'error' });
+    }
+  };
+
+  // Export Logic
+  const handleExport = async (type: 'all' | 'filtered') => {
+    try {
+      let url = '/api/purchase-orders/export?type=' + type;
+      if (type === 'filtered' && debouncedQ) {
+        url += '&q=' + encodeURIComponent(debouncedQ);
+      }
+      const response = await axios.get(url, { responseType: 'blob' });
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `purchase_orders_${type}_${new Date().getTime()}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      setSnack({ open: true, message: 'Lỗi xuất file', severity: 'error' });
     }
   };
 
   return (
     <>
 
-      <MainCard title="Đơn nhập hàng" secondary={<Button variant="contained" onClick={startCreate}>Thêm</Button>}>
+      <MainCard
+        title="Đơn nhập hàng"
+        secondary={
+          <Stack direction="row" spacing={2} alignItems="center">
+            <ExportButton onExportAll={() => handleExport('all')} onExportFiltered={() => handleExport('filtered')} />
+            <Button variant="contained" onClick={startCreate}>Thêm</Button>
+          </Stack>
+        }
+      >
         <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
           <TextField size="small" placeholder="Tìm kiếm đơn nhập hàng" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} />
         </Stack>
@@ -147,11 +186,11 @@ export default function PurchaseOrdersPage() {
                   <TableCell>{row.createdAt && new Date(row.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell align="right">
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
-                      <Button size="small" onClick={() => openDetail(row)}>Chi tiết</Button>
-                      <Button size="small" onClick={() => startEdit(row)} disabled={row.paymentStatus !== 'Unpaid' || row.warehouseStatus === 'Received'}>Sửa</Button>
-                      <Button size="small" onClick={() => openPay(row)} disabled={row.paymentStatus === 'Paid'}>Thanh toán</Button>
-                      <Button size="small" onClick={() => markReceived(row)} disabled={row.warehouseStatus === 'Received'}>Nhập kho</Button>
-                      <Button size="small" color="error" onClick={() => askDelete(row._id)}>Xóa</Button>
+                      <Button size="small" variant="outlined" onClick={() => openDetail(row)}>Chi tiết</Button>
+                      <Button size="small" variant="outlined" onClick={() => startEdit(row)} disabled={row.paymentStatus !== 'Unpaid' || row.warehouseStatus === 'Received'}>Sửa</Button>
+                      <Button size="small" variant="outlined" onClick={() => openPay(row)} disabled={row.paymentStatus === 'Paid'}>Thanh toán</Button>
+                      <Button size="small" variant="outlined" onClick={() => markReceived(row)} disabled={row.warehouseStatus === 'Received'}>Nhập kho</Button>
+                      <Button size="small" variant="outlined" color="error" onClick={() => askDelete(row._id)}>Xóa</Button>
                     </Stack>
                   </TableCell>
                 </TableRow>
@@ -217,8 +256,8 @@ export default function PurchaseOrdersPage() {
                       {products.map((p: any) => (<MenuItem key={p._id} value={p._id}>{p.pName}</MenuItem>))}
                     </Select>
                   </Grid>
-                  <Grid item xs={2}><TextField fullWidth type="number" label="SL" value={it.quantity || ''} onChange={(e) => updateItem(idx, { quantity: Math.max(0, Number(e.target.value)) })} InputProps={{ inputProps: { min: 0 } }} /></Grid>
-                  <Grid item xs={3}><TextField fullWidth type="number" label="Giá" value={it.price || ''} onChange={(e) => updateItem(idx, { price: Math.max(0, Number(e.target.value)) })} InputProps={{ inputProps: { min: 0 } }} /></Grid>
+                  <Grid item xs={2}><NumericInput fullWidth label="SL" value={it.quantity || 0} onChange={(val) => updateItem(idx, { quantity: Math.max(0, val) })} /></Grid>
+                  <Grid item xs={3}><NumericInput fullWidth label="Giá" value={it.price || 0} onChange={(val) => updateItem(idx, { price: Math.max(0, val) })} /></Grid>
                   <Grid item xs={1}><Button onClick={() => removeItem(idx)}>Xóa</Button></Grid>
                 </Grid>
               ))}
@@ -228,12 +267,11 @@ export default function PurchaseOrdersPage() {
                 <>
                   <Grid item xs={12}><Typography variant="h6" sx={{ mt: 1 }}>Thanh toán (tùy chọn)</Typography></Grid>
                   <Grid item xs={6}>
-                    <TextField
+                    <NumericInput
                       fullWidth
-                      type="number"
                       label="Số tiền thanh toán"
-                      value={form.payment?.amount || ''}
-                      onChange={(e) => setForm((f: any) => ({ ...f, payment: { ...f.payment, amount: Number(e.target.value) } }))}
+                      value={form.payment?.amount || 0}
+                      onChange={(val) => setForm((f: any) => ({ ...f, payment: { ...f.payment, amount: val } }))}
                       helperText={`Tối đa: ${formatCurrency(totalAmount)}`}
                     />
                   </Grid>
@@ -288,7 +326,7 @@ export default function PurchaseOrdersPage() {
                 </Select>
               </Grid>
               <Grid item xs={6}><TextField fullWidth type="date" value={payment.paymentDate} onChange={(e) => setPayment((p: any) => ({ ...p, paymentDate: e.target.value }))} /></Grid>
-              <Grid item xs={6}><TextField fullWidth type="number" label="Số tiền" value={payment.amount || ''} onChange={(e) => setPayment((p: any) => ({ ...p, amount: Number(e.target.value) }))} /></Grid>
+              <Grid item xs={6}><NumericInput fullWidth label="Số tiền" value={payment.amount || 0} onChange={(val) => setPayment((p: any) => ({ ...p, amount: val }))} /></Grid>
               <Grid item xs={6}><TextField fullWidth label="Ghi chú" value={payment.note} onChange={(e) => setPayment((p: any) => ({ ...p, note: e.target.value }))} /></Grid>
             </Grid>
           </DialogContent>

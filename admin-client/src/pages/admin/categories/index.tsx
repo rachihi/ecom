@@ -4,6 +4,8 @@ import axios from 'utils/axios';
 import { useDebounce } from 'hooks/useDebounce';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, MenuItem, Select, TablePagination, Alert, Snackbar } from '@mui/material';
 import MainCard from 'components/MainCard';
+import ExportButton from 'components/actions/ExportButton';
+import ImportButton from 'components/actions/ImportButton';
 
 interface CategoryForm {
   _id?: string;
@@ -32,6 +34,7 @@ export default function CategoriesPage() {
     message: '',
     severity: 'success'
   });
+  const [isImporting, setIsImporting] = useState(false);
 
   const handleOpenCreate = () => { setForm(emptyForm); setOpen(true); };
   const handleOpenEdit = (row: CategoryForm) => { setForm(row); setOpen(true); };
@@ -63,16 +66,93 @@ export default function CategoriesPage() {
     setOpen(false);
     setSnack({ open: true, message: 'Lưu thành công', severity: 'success' });
     mutate();
+    try {
+      if (!form._id) {
+        const fd = new FormData();
+        fd.append('cName', form.cName);
+        fd.append('cDescription', form.cDescription || '');
+        fd.append('cStatus', form.cStatus || 'Active');
+        await axios.post('/api/category/add-category', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      } else {
+        const fd = new FormData();
+        fd.append('cId', form._id);
+        fd.append('cDescription', form.cDescription || '');
+        fd.append('cStatus', form.cStatus || 'Active');
+        await axios.post('/api/category/edit-category', fd);
+      }
+      setOpen(false);
+      setSnack({ open: true, message: 'Lưu thành công', severity: 'success' });
+      mutate();
+    } catch (error: any) {
+      setSnack({ open: true, message: error?.response?.data?.error || 'Lỗi lưu danh mục', severity: 'error' });
+    }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Xoá danh mục này?')) return;
-    await axios.post('/api/category/delete-category', { cId: id });
-    mutate();
+    try {
+      await axios.post('/api/category/delete-category', { cId: id });
+      setSnack({ open: true, message: 'Đã xoá', severity: 'success' });
+      mutate();
+    } catch (error) {
+      setSnack({ open: true, message: 'Lỗi xoá', severity: 'error' });
+    }
+  };
+
+  // Export Logic
+  const handleExport = async (type: 'all' | 'filtered' | 'template') => {
+    try {
+      let url = '/api/category/export?type=' + type;
+      if (type === 'filtered' && debouncedQ) {
+        url += '&q=' + encodeURIComponent(debouncedQ);
+      }
+      const response = await axios.get(url, { responseType: 'blob' });
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `categories_${type}_${new Date().getTime()}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      setSnack({ open: true, message: 'Lỗi xuất file', severity: 'error' });
+    }
+  };
+
+  // Import Logic
+  const handleImport = async (file: File) => {
+    setIsImporting(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await axios.post('/api/category/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.errors && res.data.errors.length > 0) {
+        alert('Có lỗi khi nhập:\n' + res.data.errors.join('\n'));
+      }
+      setSnack({ open: true, message: res.data.message || 'Nhập file thành công', severity: 'success' });
+      mutate();
+    } catch (error: any) {
+      setSnack({ open: true, message: error?.response?.data?.error || 'Lỗi nhập file', severity: 'error' });
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   return (
-    <MainCard title={'Danh mục'} secondary={<Button variant="contained" onClick={handleOpenCreate}>{'Thêm danh mục'}</Button>}>
+    <MainCard
+      title={'Danh mục'}
+      secondary={
+        <Stack direction="row" spacing={2} alignItems="center">
+          <ExportButton onExportAll={() => handleExport('all')} onExportFiltered={() => handleExport('filtered')} />
+          <ImportButton onImport={handleImport} isLoading={isImporting} onDownloadTemplate={() => handleExport('template')} />
+          <Button variant="contained" onClick={handleOpenCreate}>{'Thêm danh mục'}</Button>
+        </Stack>
+      }
+    >
       <Stack spacing={2}>
         <Stack direction="row" spacing={1}>
           <TextField
@@ -102,8 +182,8 @@ export default function CategoriesPage() {
                 <TableCell>{row.cStatus === 'Active' ? 'Hoạt động' : (row.cStatus === 'Inactive' ? 'Tạm dừng' : row.cStatus)}</TableCell>
                 <TableCell align="right">
                   <Stack direction="row" spacing={1} justifyContent="flex-end">
-                    <Button size="small" onClick={() => handleOpenEdit(row)}>{'Sửa'}</Button>
-                    <Button size="small" color="error" onClick={() => handleDelete(row._id!)}>{'Xoá'}</Button>
+                    <Button size="small" variant="outlined" onClick={() => handleOpenEdit(row)}>{'Sửa'}</Button>
+                    <Button size="small" variant="outlined" color="error" onClick={() => handleDelete(row._id!)}>{'Xoá'}</Button>
                   </Stack>
                 </TableCell>
               </TableRow>
@@ -145,7 +225,7 @@ export default function CategoriesPage() {
         onClose={() => setSnack((prev) => ({ ...prev, open: false }))}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert onClose={() => setSnack((prev) => ({ ...prev, open: false }))} severity={snack.severity} sx={{ width: '100%' }}>
+        <Alert onClose={() => setSnack((s) => ({ ...s, open: false }))} severity={snack.severity} sx={{ width: '100%' }}>
           {snack.message}
         </Alert>
       </Snackbar>

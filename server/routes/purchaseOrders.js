@@ -90,6 +90,7 @@ const purchaseOrdersController = require("../controller/purchaseOrders");
  *         description: Updated
  */
 router.get("/", purchaseOrdersController.list);
+router.get("/export", purchaseOrdersController.getExportPurchaseOrder); // Add this
 router.get("/:id", purchaseOrdersController.getById);
 router.post("/", purchaseOrdersController.create);
 router.put("/:id", purchaseOrdersController.update);

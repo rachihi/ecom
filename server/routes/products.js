@@ -157,7 +157,50 @@ router.post(
   "/edit-product",
   auth.loginCheck,
   auth.isAdmin,
+  auth.isAdmin,
   (req, res) => productController.editProduct(req, res)
+);
+
+router.get(
+  "/export",
+  auth.loginCheck,
+  auth.isAdmin,
+  (req, res) => productController.getExportProduct(req, res)
+);
+
+const excelStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "_" + file.originalname);
+  },
+});
+
+const excelFilter = (req, file, cb) => {
+  const allowedMimes = [
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-excel"
+  ];
+
+  if (allowedMimes.includes(file.mimetype) || file.originalname.endsWith('.xlsx')) {
+    cb(null, true);
+  } else {
+    cb(new Error("Invalid file type. Only Excel files allowed."), false);
+  }
+};
+
+const excelUpload = multer({
+  storage: excelStorage,
+  fileFilter: excelFilter,
+});
+
+router.post(
+  "/import",
+  auth.loginCheck,
+  auth.isAdmin,
+  excelUpload.single("file"),
+  (req, res) => productController.postImportProduct(req, res)
 );
 
 // ===========================

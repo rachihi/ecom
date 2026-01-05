@@ -4,10 +4,13 @@ import axios from 'utils/axios';
 import { useDebounce } from 'hooks/useDebounce';
 
 // mui
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, TablePagination } from '@mui/material';
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Snackbar, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, TablePagination } from '@mui/material';
+import { isValidEmail, isValidPhone } from 'utils/validation';
 
 // project
 import MainCard from 'components/MainCard';
+import ExportButton from 'components/actions/ExportButton';
+import ImportButton from 'components/actions/ImportButton';
 
 interface CustomerForm {
   _id?: string;
@@ -33,15 +36,27 @@ export default function CustomersPage() {
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<CustomerForm>(emptyForm);
+  const [snack, setSnack] = useState<{ open: boolean, message: string, severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+  const [isImporting, setIsImporting] = useState(false);
 
   const handleOpenCreate = () => { setForm(emptyForm); setOpen(true); };
   const handleOpenEdit = (row: CustomerForm) => { setForm(row); setOpen(true); };
   const handleClose = () => setOpen(false);
 
   const handleSave = async () => {
-    if (form._id) await axios.put(`/api/customers/${form._id}`, form);
-    else await axios.post(`/api/customers`, form);
-    setOpen(false); mutate();
+    if ((form.email && !isValidEmail(form.email)) || (form.phoneNumber && !isValidPhone(form.phoneNumber))) {
+      return;
+    }
+
+    try {
+      if (form._id) await axios.put(`/api/customers/${form._id}`, form);
+      else await axios.post(`/api/customers`, form);
+      setOpen(false);
+      setSnack({ open: true, message: 'Đã lưu thành công', severity: 'success' });
+      mutate();
+    } catch (e: any) {
+      setSnack({ open: true, message: e?.response?.data?.error || 'Lỗi lưu khách hàng', severity: 'error' });
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -50,8 +65,60 @@ export default function CustomersPage() {
     mutate();
   };
 
+  // Export Logic
+  const handleExport = async (type: 'all' | 'filtered' | 'template') => {
+    try {
+      let url = '/api/customers/export?type=' + type;
+      if (type === 'filtered' && debouncedQ) {
+        url += '&q=' + encodeURIComponent(debouncedQ);
+      }
+      const response = await axios.get(url, { responseType: 'blob' });
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `customers_${type}_${new Date().getTime()}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      setSnack({ open: true, message: 'Lỗi xuất file', severity: 'error' });
+    }
+  };
+
+  // Import Logic
+  const handleImport = async (file: File) => {
+    setIsImporting(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await axios.post('/api/customers/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.errors && res.data.errors.length > 0) {
+        alert('Có lỗi khi nhập:\n' + res.data.errors.join('\n'));
+      }
+      setSnack({ open: true, message: res.data.message || 'Nhập file thành công', severity: 'success' });
+      mutate();
+    } catch (error: any) {
+      setSnack({ open: true, message: error?.response?.data?.error || 'Lỗi nhập file', severity: 'error' });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   return (
-    <MainCard title="Khách hàng" secondary={<Button variant="contained" onClick={handleOpenCreate}>Thêm khách</Button>}>
+    <MainCard
+      title="Khách hàng"
+      secondary={
+        <Stack direction="row" spacing={2} alignItems="center">
+          <ExportButton onExportAll={() => handleExport('all')} onExportFiltered={() => handleExport('filtered')} />
+          <ImportButton onImport={handleImport} isLoading={isImporting} onDownloadTemplate={() => handleExport('template')} />
+          <Button variant="contained" onClick={handleOpenCreate}>Thêm khách</Button>
+        </Stack>
+      }
+    >
       <Stack spacing={2}>
         <Stack direction="row" spacing={1}>
           <TextField
@@ -87,8 +154,8 @@ export default function CustomersPage() {
                 <TableCell>{row.taxCode}</TableCell>
                 <TableCell align="right">
                   <Stack direction="row" spacing={1} justifyContent="flex-end">
-                    <Button size="small" onClick={() => handleOpenEdit(row)}>Sửa</Button>
-                    <Button size="small" color="error" onClick={() => handleDelete(row._id!)}>Xoá</Button>
+                    <Button size="small" variant="outlined" onClick={() => handleOpenEdit(row)}>Sửa</Button>
+                    <Button size="small" variant="outlined" color="error" onClick={() => handleDelete(row._id!)}>Xoá</Button>
                   </Stack>
                 </TableCell>
               </TableRow>
@@ -112,8 +179,22 @@ export default function CustomersPage() {
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField label="Tên" value={form.fullName} onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))} fullWidth />
-            <TextField label="Điện thoại" value={form.phoneNumber} onChange={(e) => setForm((f) => ({ ...f, phoneNumber: e.target.value }))} fullWidth />
-            <TextField label="Email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} fullWidth />
+            <TextField
+              label="Điện thoại"
+              value={form.phoneNumber}
+              onChange={(e) => setForm((f) => ({ ...f, phoneNumber: e.target.value }))}
+              fullWidth
+              error={!!form.phoneNumber && !isValidPhone(form.phoneNumber)}
+              helperText={!!form.phoneNumber && !isValidPhone(form.phoneNumber) ? 'Số điện thoại không hợp lệ' : ''}
+            />
+            <TextField
+              label="Email"
+              value={form.email}
+              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+              fullWidth
+              error={!!form.email && !isValidEmail(form.email)}
+              helperText={!!form.email && !isValidEmail(form.email) ? 'Email không hợp lệ' : ''}
+            />
             <TextField label="Địa chỉ" value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} fullWidth />
             <TextField label="MST" value={form.taxCode} onChange={(e) => setForm((f) => ({ ...f, taxCode: e.target.value }))} fullWidth />
           </Stack>
@@ -123,6 +204,11 @@ export default function CustomersPage() {
           <Button onClick={handleSave} variant="contained">Lưu</Button>
         </DialogActions>
       </Dialog>
-    </MainCard>
+      <Snackbar open={snack.open} autoHideDuration={3000} onClose={() => setSnack((s) => ({ ...s, open: false }))}>
+        <Alert onClose={() => setSnack((s) => ({ ...s, open: false }))} severity={snack.severity} sx={{ width: '100%' }}>
+          {snack.message}
+        </Alert>
+      </Snackbar>
+    </MainCard >
   );
 }

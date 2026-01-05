@@ -276,6 +276,71 @@ class Order {
       }
     }
   }
+
+  // ===========================
+  // EXPORT ONLY
+  // ===========================
+
+  async getExportOrders(req, res) {
+    try {
+      const excelHandler = require("../utils/excelHandler");
+
+      const q = (req.query.q || '').trim();
+      const type = req.query.type || 'all';
+
+      let filter = {};
+      if (type === 'filtered' && q) {
+        // Reuse search logic from getAllOrders
+        try {
+          const customers = await customerModel
+            .find({ fullName: { $regex: q, $options: 'i' } })
+            .select('_id');
+          const ids = customers.map((c) => c._id);
+          filter = {
+            $or: [
+              { transactionId: { $regex: q, $options: 'i' } },
+              { customer: { $in: ids } },
+            ],
+          };
+        } catch (e) {
+          filter = { transactionId: { $regex: q, $options: 'i' } };
+        }
+      }
+
+      const orders = await orderModel
+        .find(filter)
+        .populate("customer")
+        .sort({ _id: -1 });
+
+      const data = orders.map(o => ({
+        orderCode: o.orderCode || o.transactionId,
+        customerName: o.customer ? o.customer.fullName : 'Guest',
+        amount: o.amount,
+        paymentStatus: o.paymentStatus,
+        status: o.status,
+        createdAt: o.createdAt ? o.createdAt.toISOString().split('T')[0] : ''
+      }));
+
+      const columns = [
+        { header: 'Order Code', key: 'orderCode', width: 20 },
+        { header: 'Customer', key: 'customerName', width: 25 },
+        { header: 'Amount', key: 'amount', width: 15 },
+        { header: 'Payment Status', key: 'paymentStatus', width: 15 },
+        { header: 'Delivery Status', key: 'status', width: 15 },
+        { header: 'Created At', key: 'createdAt', width: 15 },
+      ];
+
+      const buffer = await excelHandler.generateExcel(data, columns, 'Orders');
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=orders_${type}_${Date.now()}.xlsx`);
+      return res.send(buffer);
+
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
 }
 
 const ordersController = new Order();

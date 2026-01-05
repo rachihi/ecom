@@ -32,6 +32,9 @@ import {
 } from '@mui/material';
 import MainCard from 'components/MainCard';
 import { uploadImage } from 'utils/upload';
+import NumericInput from 'components/NumericInput';
+import ExportButton from 'components/actions/ExportButton';
+import ImportButton from 'components/actions/ImportButton';
 
 interface ProductRow {
   _id: string;
@@ -97,6 +100,7 @@ export default function ProductsPage() {
   const [imgPreviews, setImgPreviews] = useState<string[]>([]);
   const [isLoading2, setIsLoading2] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   const startCreate = () => {
     setForm({
@@ -138,7 +142,7 @@ export default function ProductsPage() {
       console.log(form);
 
       // Validate required fields
-      if (!form.pName || !form.pPrice || !form.pCost || form.pQuantity === undefined || form.pQuantity === null || !form.pCategory || !form.pStatus) {
+      if (!form.pName || !form.pSKU || !form.pPrice || !form.pCost || form.pQuantity === undefined || form.pQuantity === null || !form.pCategory || !form.pStatus) {
         setSnack({ open: true, message: 'Vui lòng nhập đầy đủ các trường bắt buộc', severity: 'error' });
         setIsLoading2(false);
         return;
@@ -147,6 +151,7 @@ export default function ProductsPage() {
       // Tạo payload JSON
       // Upload new images first
       // Sử dụng trực tiếp URLs đã upload từ state
+
       const imageUrls = imgPreviews;
 
       const payload = {
@@ -201,7 +206,7 @@ export default function ProductsPage() {
     } catch (error: any) {
       setSnack({
         open: true,
-        message: error?.response?.data?.message || 'Lỗi: không thể lưu sản phẩm',
+        message: error?.error || error?.message || 'Lỗi: không thể lưu sản phẩm',
         severity: 'error'
       });
     } finally {
@@ -225,15 +230,67 @@ export default function ProductsPage() {
     }
   };
 
+  // Export Logic
+  const handleExport = async (type: 'all' | 'filtered' | 'template') => {
+    try {
+      let url = '/api/product/export?type=' + type;
+      if (type === 'filtered') {
+        const search = q.trim();
+        if (search) url += '&search=' + encodeURIComponent(search);
+        if (filterCategory) url += '&category=' + filterCategory;
+        if (filterStatus) url += '&status=' + filterStatus;
+      }
+
+      const response = await axios.get(url, { responseType: 'blob' });
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `products_${type}_${new Date().getTime()}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      setSnack({ open: true, message: 'Lỗi khi xuất file', severity: 'error' });
+    }
+  };
+
+  // Import Logic
+  const handleImport = async (file: File) => {
+    setIsImporting(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await axios.post('/api/product/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.errors && res.data.errors.length > 0) {
+        alert('Có lỗi khi nhập:\n' + res.data.errors.join('\n'));
+      }
+      setSnack({ open: true, message: res.data.message || 'Nhập file thành công', severity: 'success' });
+      mutate();
+    } catch (error: any) {
+      setSnack({ open: true, message: error?.response?.data?.error || 'Lỗi nhập file', severity: 'error' });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   return (
     <>
 
       <MainCard
         title="Sản phẩm"
         secondary={
-          <Button variant="contained" onClick={startCreate}>
-            Thêm sản phẩm
-          </Button>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <ExportButton
+              onExportAll={() => handleExport('all')}
+              onExportFiltered={() => handleExport('filtered')}
+            />
+            <ImportButton onImport={handleImport} isLoading={isImporting} onDownloadTemplate={() => handleExport('template')} />
+            <Button variant="contained" onClick={startCreate}>{'Thêm sản phẩm'}</Button>
+          </Stack>
         }
       >
         <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
@@ -446,6 +503,7 @@ export default function ProductsPage() {
                     <TextField
                       fullWidth
                       label="SKU"
+                      required
                       value={form.pSKU || ''}
                       onChange={(e) => setForm((f: any) => ({ ...f, pSKU: e.target.value }))}
                       placeholder="VD: FURN-CHR-001"
@@ -492,34 +550,33 @@ export default function ProductsPage() {
                     />
                   </Grid>
                   <Grid item xs={3}>
-                    <TextField
+                    <NumericInput
                       fullWidth
-                      type="number"
                       label="Giá bán (VND)"
                       required
-                      value={form.pPrice || ''}
-                      onChange={(e) => setForm((f: any) => ({ ...f, pPrice: Number(e.target.value) }))}
+                      value={form.pPrice || 0}
+                      onChange={(val) => setForm((f: any) => ({ ...f, pPrice: val }))}
                     />
                   </Grid>
 
+
+
                   <Grid item xs={4}>
-                    <TextField
+                    <NumericInput
                       fullWidth
-                      type="number"
                       label="Giá vốn (VND)"
-                      value={form.pCost || ''}
+                      value={form.pCost || 0}
                       required
-                      onChange={(e) => setForm((f: any) => ({ ...f, pCost: Number(e.target.value) }))}
+                      onChange={(val) => setForm((f: any) => ({ ...f, pCost: val }))}
                       placeholder="Giá nhập"
                     />
                   </Grid>
                   <Grid item xs={4}>
-                    <TextField
+                    <NumericInput
                       fullWidth
-                      type="number"
                       label="Giảm giá (%)"
-                      value={form.pDiscount || ''}
-                      onChange={(e) => setForm((f: any) => ({ ...f, pDiscount: Number(e.target.value) }))}
+                      value={form.pDiscount || 0}
+                      onChange={(val) => setForm((f: any) => ({ ...f, pDiscount: Math.min(100, val) }))}
                     />
                   </Grid>
                   <Grid item xs={6}>

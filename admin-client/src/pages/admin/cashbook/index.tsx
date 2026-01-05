@@ -2,9 +2,10 @@ import { useMemo, useState } from 'react';
 import useSWR from 'swr';
 import axios from 'utils/axios';
 import { useDebounce } from 'hooks/useDebounce';
-import { Box, Chip, Grid, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, TablePagination } from '@mui/material';
+import { Box, Chip, Grid, Snackbar, Alert, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, TablePagination } from '@mui/material';
 import MainCard from 'components/MainCard';
 import { formatCurrency } from 'utils/format';
+import ExportButton from 'components/actions/ExportButton';
 
 interface CashbookEntry {
   _id: string;
@@ -33,6 +34,7 @@ export default function CashbookPage() {
   const debouncedQ = useDebounce(q, 500);
   const [page, setPage] = useState(0);
   const [limit, setLimit] = useState(10);
+  const [snack, setSnack] = useState<{ open: boolean, message: string, severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
 
   const tMethod = (m: string) => {
     if (m === 'Cash') return 'Tiền mặt';
@@ -57,8 +59,32 @@ export default function CashbookPage() {
   const total = data?.total || 0;
   const summary = data?.summary || { totalIn: 0, totalOut: 0, balance: 0 };
 
+  // Export Logic
+  const handleExport = async (type: 'all' | 'filtered') => {
+    try {
+      let url = '/api/cashbook/export?type=' + type;
+      // Pass the same filters
+      if (type === 'filtered') {
+        if (debouncedQ) url += '&q=' + encodeURIComponent(debouncedQ);
+        if (from) url += '&from=' + from;
+        if (to) url += '&to=' + to;
+      }
+      const response = await axios.get(url, { responseType: 'blob' });
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `cashbook_${type}_${new Date().getTime()}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      setSnack({ open: true, message: 'Lỗi xuất file', severity: 'error' });
+    }
+  };
+
   return (
-    <MainCard title={'Sổ quỹ'}>
+    <MainCard title={'Sổ quỹ'} secondary={<ExportButton onExportAll={() => handleExport('all')} onExportFiltered={() => handleExport('filtered')} />}>
       <Stack spacing={2}>
         <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
           <TextField
@@ -130,7 +156,11 @@ export default function CashbookPage() {
           onRowsPerPageChange={(e) => { setLimit(parseInt(e.target.value, 10)); setPage(0); }}
         />
       </Stack>
-    </MainCard>
+      <Snackbar open={snack.open} autoHideDuration={3000} onClose={() => setSnack((s) => ({ ...s, open: false }))}>
+        <Alert onClose={() => setSnack((s) => ({ ...s, open: false }))} severity={snack.severity} sx={{ width: '100%' }}>
+          {snack.message}
+        </Alert>
+      </Snackbar>
+    </MainCard >
   );
 }
-

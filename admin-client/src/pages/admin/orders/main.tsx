@@ -4,8 +4,10 @@ import axios from 'utils/axios';
 import { useDebounce } from 'hooks/useDebounce';
 import { formatCurrency } from 'utils/format';
 
-import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Select, Snackbar, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography, TextField, TablePagination } from '@mui/material';
+import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Select, Snackbar, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography, TextField, TablePagination, Grid } from '@mui/material';
 import MainCard from 'components/MainCard';
+import NumericInput from 'components/NumericInput';
+import ExportButton from 'components/actions/ExportButton';
 
 interface OrderRow {
   _id: string;
@@ -58,18 +60,23 @@ export default function OrdersPage() {
   const payments: any[] = payData?.payments || [];
   const summary = payData?.summary || { totalPaid: 0, remaining: 0 };
   const [payOpen, setPayOpen] = useState(false);
-  const [payAmount, setPayAmount] = useState(0);
+  const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
+  const [payAmount, setPayAmount] = useState<number>(0);
   const [payMethod, setPayMethod] = useState('Cash');
   const [payNote, setPayNote] = useState('');
 
   const submitPayment = async () => {
     try {
       if (!detailRow) return;
+      if (payAmount > summary.remaining) {
+        setSnack({ open: true, message: 'Số tiền thanh toán không được vượt quá số tiền còn lại', severity: 'error' });
+        return;
+      }
       await axios.post('/api/payments', {
         order: detailRow._id,
         amount: payAmount,
         paymentMethod: payMethod,
-        paymentDate: new Date(),
+        paymentDate: payDate,
         note: payNote
       });
       setSnack({ open: true, message: 'Thêm thanh toán thành công', severity: 'success' });
@@ -162,9 +169,29 @@ export default function OrdersPage() {
     }
   };
 
+  // Export Logic
+  const handleExport = async (type: 'all' | 'filtered') => {
+    try {
+      let url = '/api/order/export?type=' + type;
+      if (type === 'filtered' && debouncedQ) {
+        url += '&q=' + encodeURIComponent(debouncedQ);
+      }
+      const response = await axios.get(url, { responseType: 'blob' });
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `orders_${type}_${new Date().getTime()}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      setSnack({ open: true, message: 'Lỗi xuất file', severity: 'error' });
+    }
+  };
 
   return (
-    <MainCard title="Đơn hàng">
+    <MainCard title="Đơn hàng" secondary={<ExportButton onExportAll={() => handleExport('all')} onExportFiltered={() => handleExport('filtered')} />}>
       {isLoading && <Typography>Đang tải...</Typography>}
       <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
         <TextField
@@ -214,8 +241,8 @@ export default function OrdersPage() {
               <TableCell>{tStatus(row.paymentStatus)}</TableCell>
               <TableCell align="right">
                 <Stack direction="row" spacing={1} justifyContent="flex-end">
-                  <Button size="small" onClick={() => { setDetailRow(row); setDetailOpen(true); }}>Chi tiết</Button>
-                  <Button size="small" color="error" onClick={() => askDelete(row._id)}>Xoá</Button>
+                  <Button size="small" variant="outlined" onClick={() => { setDetailRow(row); setDetailOpen(true); }}>Chi tiết</Button>
+                  <Button size="small" variant="outlined" color="error" onClick={() => askDelete(row._id)}>Xoá</Button>
                 </Stack>
               </TableCell>
             </TableRow>
@@ -277,17 +304,51 @@ export default function OrdersPage() {
           <Button onClick={() => setDetailOpen(false)}>Đóng</Button>
         </DialogActions>
 
-        <Dialog open={payOpen} onClose={() => setPayOpen(false)}>
-          <DialogTitle>Thêm thanh toán</DialogTitle>
+        <Dialog open={payOpen} onClose={() => setPayOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Thanh toán đơn hàng</DialogTitle>
           <DialogContent>
-            <Stack spacing={2} sx={{ mt: 1, minWidth: 300 }}>
-              <TextField label="Số tiền" type="number" value={payAmount} onChange={(e) => setPayAmount(Number(e.target.value))} fullWidth />
-              <Select value={payMethod} onChange={(e) => setPayMethod(e.target.value)} fullWidth>
-                <MenuItem value="Cash">Tiền mặt</MenuItem>
-                <MenuItem value="BankTransfer">Chuyển khoản</MenuItem>
-              </Select>
-              <TextField label="Ghi chú" value={payNote} onChange={(e) => setPayNote(e.target.value)} fullWidth />
-            </Stack>
+            <Typography sx={{ mb: 2 }}>Còn lại: {formatCurrency(summary.remaining)}</Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Select
+                  value={payMethod}
+                  onChange={(e) => setPayMethod(e.target.value)}
+                  fullWidth
+                  size="small"
+                >
+                  <MenuItem value="Cash">Tiền mặt</MenuItem>
+                  <MenuItem value="BankTransfer">Chuyển khoản</MenuItem>
+                </Select>
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  type="date"
+                  value={payDate}
+                  onChange={(e) => setPayDate(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <NumericInput
+                  label="Số tiền"
+                  value={payAmount}
+                  onChange={(val) => setPayAmount(val)}
+                  fullWidth
+                  size="small"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Ghi chú"
+                  value={payNote}
+                  onChange={(e) => setPayNote(e.target.value)}
+                  fullWidth
+                  size="small"
+                />
+              </Grid>
+            </Grid>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setPayOpen(false)}>Huỷ</Button>
