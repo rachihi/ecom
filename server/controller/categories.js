@@ -8,7 +8,7 @@ class Category {
       const page = Math.max(parseInt(req.query.page) || 1, 1);
       const limit = Math.min(parseInt(req.query.limit) || 10, 100);
       const q = (req.query.q || '').trim();
-      const filter = q ? { cName: { $regex: q, $options: 'i' }, cStatus: 'Active' } : { cStatus: 'Active' };
+      const filter = q ? { cName: { $regex: q, $options: 'i' } } : {};
 
       const total = await categoryModel.countDocuments(filter);
       const Categories = await categoryModel
@@ -35,18 +35,15 @@ class Category {
     try {
       let checkCategoryExists = await categoryModel.findOne({ cName: cName });
       if (checkCategoryExists) {
-        return res.json({ error: "Category already exists" });
+        return res.json({ error: "Tên danh mục đã tồn tại" });
       } else {
         let newCategory = new categoryModel({
           cName,
           cDescription,
           cStatus,
         });
-        await newCategory.save((err) => {
-          if (!err) {
-            return res.json({ success: "Category created successfully" });
-          }
-        });
+        await newCategory.save();
+        return res.json({ success: "Category created successfully" });
       }
     } catch (err) {
       console.log(err);

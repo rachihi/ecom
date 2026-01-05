@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import useSWR from 'swr';
 import axios from 'utils/axios';
 import { useDebounce } from 'hooks/useDebounce';
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, MenuItem, Select, TablePagination } from '@mui/material';
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, MenuItem, Select, TablePagination, Alert, Snackbar } from '@mui/material';
 import MainCard from 'components/MainCard';
 
 interface CategoryForm {
@@ -27,26 +27,41 @@ export default function CategoriesPage() {
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<CategoryForm>(emptyForm);
+  const [snack, setSnack] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
   const handleOpenCreate = () => { setForm(emptyForm); setOpen(true); };
   const handleOpenEdit = (row: CategoryForm) => { setForm(row); setOpen(true); };
   const handleClose = () => setOpen(false);
 
   const handleSave = async () => {
+    let res;
     if (!form._id) {
-      const fd = new FormData();
-      fd.append('cName', form.cName);
-      fd.append('cDescription', form.cDescription || '');
-      fd.append('cStatus', form.cStatus || 'Active');
-      await axios.post('/api/category/add-category', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const payload = {
+        cName: form.cName,
+        cDescription: form.cDescription || '',
+        cStatus: form.cStatus || 'Active'
+      };
+      res = await axios.post('/api/category/add-category', payload);
     } else {
-      const fd = new FormData();
-      fd.append('cId', form._id);
-      fd.append('cDescription', form.cDescription || '');
-      fd.append('cStatus', form.cStatus || 'Active');
-      await axios.post('/api/category/edit-category', fd);
+      const payload = {
+        cId: form._id,
+        cDescription: form.cDescription || '',
+        cStatus: form.cStatus || 'Active'
+      };
+      res = await axios.post('/api/category/edit-category', payload);
     }
+
+    if (res.data.error) {
+      setSnack({ open: true, message: res.data.error, severity: 'error' });
+      return; // Do not close dialog
+    }
+
     setOpen(false);
+    setSnack({ open: true, message: 'Lưu thành công', severity: 'success' });
     mutate();
   };
 
@@ -124,6 +139,16 @@ export default function CategoriesPage() {
           <Button onClick={handleSave} variant="contained">{'Lưu'}</Button>
         </DialogActions>
       </Dialog>
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={3000}
+        onClose={() => setSnack((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={() => setSnack((prev) => ({ ...prev, open: false }))} severity={snack.severity} sx={{ width: '100%' }}>
+          {snack.message}
+        </Alert>
+      </Snackbar>
     </MainCard >
   );
 }
