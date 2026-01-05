@@ -52,7 +52,7 @@ class Category {
 
   async postEditCategory(req, res) {
     let { cId, cDescription, cStatus } = req.body;
-    if (!cId || !cDescription || !cStatus) {
+    if (!cId || !cStatus) {
       return res.json({ error: "All filled must be required" });
     }
     try {
