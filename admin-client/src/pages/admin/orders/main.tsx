@@ -60,7 +60,10 @@ export default function OrdersPage() {
   const payments: any[] = payData?.payments || [];
   const summary = payData?.summary || { totalPaid: 0, remaining: 0 };
   const [payOpen, setPayOpen] = useState(false);
-  const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
+  const [payDate, setPayDate] = useState(() => {
+    const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+    return (new Date(Date.now() - tzOffset)).toISOString().slice(0, 16);
+  });
   const [payAmount, setPayAmount] = useState<number>(0);
   const [payMethod, setPayMethod] = useState('Cash');
   const [payNote, setPayNote] = useState('');
@@ -323,7 +326,7 @@ export default function OrdersPage() {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  type="date"
+                  type="datetime-local"
                   value={payDate}
                   onChange={(e) => setPayDate(e.target.value)}
                   InputLabelProps={{ shrink: true }}

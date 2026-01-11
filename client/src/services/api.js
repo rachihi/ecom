@@ -163,7 +163,7 @@ export const orderAPI = {
   updateOrder: (orderId, data) => api.put(`/order/${orderId}`, data),
 
   // Cancel order
-  cancelOrder: (orderId) => api.put(`/order/${orderId}/cancel`, {}),
+  cancelOrder: (orderId) => api.put(`/order/cancel-order`, { oId: orderId }),
 };
 
 // ============================================

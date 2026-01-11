@@ -28,8 +28,42 @@ interface CashbookResp {
 }
 
 export default function CashbookPage() {
-  const [from, setFrom] = useState<string>('');
-  const [to, setTo] = useState<string>('');
+  // Date Helpers
+  const formatDate = (d: Date) => {
+    // Return YYYY-MM-DD in local time
+    const offset = d.getTimezoneOffset();
+    const date = new Date(d.getTime() - (offset * 60 * 1000));
+    return date.toISOString().split('T')[0];
+  };
+
+  const getRanges = () => {
+    const today = new Date();
+    const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+
+    // Week (Monday to Sunday)
+    const day = today.getDay();
+    const diff = today.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+    const monday = new Date(today.setDate(diff));
+    const sunday = new Date(today.setDate(monday.getDate() + 6));
+
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    const startOfYear = new Date(today.getFullYear(), 0, 1);
+    const endOfYear = new Date(today.getFullYear(), 11, 31);
+
+    return { today: new Date(), yesterday, monday, sunday, startOfMonth, endOfMonth, startOfYear, endOfYear };
+  };
+
+  // Combine filters into single state to prevent double fetch
+  const [filter, setFilter] = useState<{ from: string; to: string }>(() => {
+    const d = new Date();
+    return {
+      from: formatDate(new Date(d.getFullYear(), d.getMonth(), 1)),
+      to: formatDate(new Date(d.getFullYear(), d.getMonth() + 1, 0))
+    };
+  });
+
   const [q, setQ] = useState('');
   const debouncedQ = useDebounce(q, 500);
   const [page, setPage] = useState(0);
@@ -42,15 +76,64 @@ export default function CashbookPage() {
     return m;
   };
 
+  const setRange = (type: 'today' | 'yesterday' | 'week' | 'month' | 'year') => {
+    // Unused, removal candidate
+  };
+
+  // Cleaner helpers
+  const applyFilter = (type: 'today' | 'yesterday' | 'week' | 'month' | 'year') => {
+    const today = new Date();
+    let start = new Date();
+    let end = new Date();
+
+    switch (type) {
+      case 'today':
+        break; // start/end are today
+      case 'yesterday':
+        start.setDate(today.getDate() - 1);
+        end.setDate(today.getDate() - 1);
+        break;
+      case 'week':
+        const day = today.getDay();
+        const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+        start.setDate(diff);
+        end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        break;
+      case 'month':
+        start = new Date(today.getFullYear(), today.getMonth(), 1);
+        end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        break;
+      case 'year':
+        start = new Date(today.getFullYear(), 0, 1);
+        end = new Date(today.getFullYear(), 11, 31);
+        break;
+    }
+    // Update both at once
+    setFilter({
+      from: formatDate(start),
+      to: formatDate(end)
+    });
+    setPage(0);
+  };
+
   const query = useMemo(() => {
     const params = new URLSearchParams();
-    if (from) params.set('from', from);
-    if (to) params.set('to', to);
+    if (filter.from) {
+      const [y, m, d] = filter.from.split('-').map(Number);
+      const start = new Date(y, m - 1, d, 0, 0, 0, 0);
+      params.set('from', start.toISOString());
+    }
+    if (filter.to) {
+      const [y, m, d] = filter.to.split('-').map(Number);
+      const end = new Date(y, m - 1, d, 23, 59, 59, 999);
+      params.set('to', end.toISOString());
+    }
     if (debouncedQ) params.set('q', debouncedQ);
     params.set('page', String(page + 1));
     params.set('limit', String(limit));
     return params.toString();
-  }, [from, to, debouncedQ, page, limit]);
+  }, [filter, debouncedQ, page, limit]);
 
   const key = `/api/cashbook${query ? `?${query}` : ''}`;
   const { data } = useSWR<CashbookResp>(key);
@@ -66,8 +149,16 @@ export default function CashbookPage() {
       // Pass the same filters
       if (type === 'filtered') {
         if (debouncedQ) url += '&q=' + encodeURIComponent(debouncedQ);
-        if (from) url += '&from=' + from;
-        if (to) url += '&to=' + to;
+        if (filter.from) {
+          const [y, m, d] = filter.from.split('-').map(Number);
+          const start = new Date(y, m - 1, d, 0, 0, 0, 0);
+          url += '&from=' + start.toISOString();
+        }
+        if (filter.to) {
+          const [y, m, d] = filter.to.split('-').map(Number);
+          const end = new Date(y, m - 1, d, 23, 59, 59, 999);
+          url += '&to=' + end.toISOString();
+        }
       }
       const response = await axios.get(url, { responseType: 'blob' });
       const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -86,6 +177,15 @@ export default function CashbookPage() {
   return (
     <MainCard title={'Sổ quỹ'} secondary={<ExportButton onExportAll={() => handleExport('all')} onExportFiltered={() => handleExport('filtered')} />}>
       <Stack spacing={2}>
+        <Stack direction="row" spacing={1} pb={1}>
+          <Chip label="Tất cả" onClick={() => { setFilter({ from: '', to: '' }); setQ(''); setPage(0); }} clickable color={(!filter.from && !filter.to) ? "primary" : "default"} variant={(!filter.from && !filter.to) ? "filled" : "outlined"} />
+          <Chip label="Hôm nay" onClick={() => applyFilter('today')} clickable color="primary" variant="outlined" />
+          <Chip label="Hôm qua" onClick={() => applyFilter('yesterday')} clickable color="primary" variant="outlined" />
+          <Chip label="Tuần này" onClick={() => applyFilter('week')} clickable color="primary" variant="outlined" />
+          <Chip label="Tháng này" onClick={() => applyFilter('month')} clickable color="primary" variant="outlined" />
+          <Chip label="Năm nay" onClick={() => applyFilter('year')} clickable color="primary" variant="outlined" />
+        </Stack>
+
         <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
           <TextField
             size="small"
@@ -99,16 +199,16 @@ export default function CashbookPage() {
             label="Từ ngày"
             size="small"
             InputLabelProps={{ shrink: true }}
-            value={from}
-            onChange={(e) => { setFrom(e.target.value); setPage(0); }}
+            value={filter.from}
+            onChange={(e) => { setFilter(f => ({ ...f, from: e.target.value })); setPage(0); }}
           />
           <TextField
             type="date"
             label="Đến ngày"
             size="small"
             InputLabelProps={{ shrink: true }}
-            value={to}
-            onChange={(e) => { setTo(e.target.value); setPage(0); }}
+            value={filter.to}
+            onChange={(e) => { setFilter(f => ({ ...f, to: e.target.value })); setPage(0); }}
           />
         </Stack>
 
@@ -135,7 +235,16 @@ export default function CashbookPage() {
           <TableBody>
             {entries.map((e) => (
               <TableRow key={e._id} hover>
-                <TableCell>{new Date(e.paymentDate).toLocaleString()}</TableCell>
+                <TableCell>
+                  {new Date(e.paymentDate).toLocaleString('vi-VN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                  })}
+                </TableCell>
                 <TableCell>
                   <Chip size="small" label={e.direction === 'in' ? 'Thu' : 'Chi'} color={e.direction === 'in' ? 'success' : 'error'} />
                 </TableCell>

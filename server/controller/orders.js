@@ -181,17 +181,6 @@ class Order {
                   quantity: item.quantitiy,
                   totalPrice: finalPrice * item.quantitiy
                 }).save();
-
-                // Update Warehouse and Product Stock
-                try {
-                  await warehouseModel.findOneAndUpdate(
-                    { product: item.id },
-                    { $inc: { quantity: -Math.abs(item.quantitiy), sold: +Math.abs(item.quantitiy) }, lastUpdated: Date.now() },
-                    { upsert: true }
-                  );
-                } catch (stockErr) {
-                  console.error("Stock update failed", stockErr);
-                }
               }
             }
           }
@@ -248,6 +237,22 @@ class Order {
           return res.status(400).json({ error: "Không thể cập nhật trạng thái đơn hàng đã giao" });
         }
 
+        // If updating to Delivered, deduct stock
+        if (status === "Delivered") {
+          const orderDetails = await orderDetailModel.find({ order: oId });
+          for (const detail of orderDetails) {
+            try {
+              await warehouseModel.findOneAndUpdate(
+                { product: detail.productId },
+                { $inc: { quantity: -Math.abs(detail.quantity), sold: +Math.abs(detail.quantity) }, lastUpdated: Date.now() },
+                { upsert: true }
+              );
+            } catch (stockErr) {
+              console.error(`Stock update failed for product ${detail.productId}`, stockErr);
+            }
+          }
+        }
+
         await orderModel.findByIdAndUpdate(oId, {
           status: status,
           updatedAt: Date.now(),
@@ -273,6 +278,40 @@ class Order {
         }
       } catch (error) {
         console.log(error);
+      }
+    }
+  }
+
+  async putCancelOrder(req, res) {
+    let { oId } = req.body;
+    let customerId = req.customerDetails._id;
+
+    if (!oId) {
+      return res.json({ error: "Order ID is required" });
+    } else {
+      try {
+        const order = await orderModel.findOne({ _id: oId, customer: customerId });
+        if (!order) {
+          return res.status(404).json({ error: "Order not found" });
+        }
+        if (order.paymentStatus !== "Unpaid") {
+          return res.status(400).json({ error: "Cannot cancel paid order" });
+        }
+        if (order.status === "Delivered" || order.status === "Cancelled") {
+          return res.status(400).json({ error: "Cannot cancel order in this status" });
+        }
+
+        // If order was Shipped, should we allow cancel? Probably strict "Unpaid" implies it hasn't gone far, 
+        // but robust systems might check Shipping status too. Plan said "Not Delivered". 
+        // Safest is to allow cancel if Unpaid + Not Delivered + Not Cancelled.
+
+        await orderModel.findByIdAndUpdate(oId, {
+          status: "Cancelled",
+          updatedAt: Date.now(),
+        });
+        return res.json({ success: "Order cancelled successfully" });
+      } catch (err) {
+        return res.status(500).json({ error: "Internal server error" });
       }
     }
   }

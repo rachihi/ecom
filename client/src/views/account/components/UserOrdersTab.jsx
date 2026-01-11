@@ -1,10 +1,12 @@
-import { displayDate, displayMoney } from '@/helpers/utils';
+import { displayDate, displayMoney, displayActionMessage } from '@/helpers/utils';
 import { getOrders } from '@/redux/actions/orderActions';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { LoadingOutlined, EyeOutlined } from '@ant-design/icons';
+import { LoadingOutlined, EyeOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { Modal } from '@/components/common';
+import { orderAPI } from '@/services/api';
 
+import axios from 'axios';
 const UserOrdersTab = () => {
   const dispatch = useDispatch();
   const profile = useSelector((state) => state.profile);
@@ -13,7 +15,6 @@ const UserOrdersTab = () => {
     isLoading: state.app.loading,
     pagination: state.orders.pagination || { page: 1, pages: 1, total: 0 }
   }));
-
   // Modal State
   const [displayModal, setDisplayModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -52,6 +53,25 @@ const UserOrdersTab = () => {
   const onCloseModal = () => {
     setDisplayModal(false);
     setSelectedOrder(null);
+  };
+
+  const handleCancelOrder = async (orderId) => {
+    if (window.confirm('Bạn có chắc chắn muốn huỷ đơn hàng này?')) {
+      try {
+        const res = await orderAPI.cancelOrder(orderId);
+        if (res.data.success) {
+          displayActionMessage('Đã huỷ đơn hàng thành công!', 'success');
+          fetchOrders(pagination.page);
+          if (selectedOrder && selectedOrder.id === orderId) {
+            onCloseModal();
+          }
+        } else {
+          displayActionMessage(res.data.error || 'Có lỗi xảy ra', 'error');
+        }
+      } catch (error) {
+        displayActionMessage(error.response?.data?.error || 'Lỗi kết nối', 'error');
+      }
+    }
   };
 
   return (
@@ -98,7 +118,7 @@ const UserOrdersTab = () => {
                         <button
                           className="button button-small"
                           onClick={() => onOpenModal(order)}
-                          style={{ fontSize: '12px', padding: '4px 8px' }}
+                          style={{ fontSize: '12px', padding: '4px 8px', marginRight: '5px' }}
                         >
                           <EyeOutlined /> &nbsp; Xem
                         </button>
@@ -176,6 +196,15 @@ const UserOrdersTab = () => {
               <strong style={{ fontSize: '1.5rem', color: '#000' }}>{displayMoney(selectedOrder.totalAmount)}</strong>
             </div>
             <div className="flex-right mt-2" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+              {selectedOrder.paymentStatus === 'Unpaid' && selectedOrder.status !== 'Delivered' && selectedOrder.status !== 'Cancelled' && (
+                <button
+                  className="button button-small button-danger"
+                  onClick={() => handleCancelOrder(selectedOrder.id)}
+                  style={{ fontSize: '12px', padding: '4px 8px', backgroundColor: '#e53e3e', borderColor: '#e53e3e', color: 'white', marginRight: 'auto' }}
+                >
+                  <CloseCircleOutlined /> &nbsp; Huỷ Đơn Hàng
+                </button>
+              )}
               <button className="button button-small button-muted" onClick={onCloseModal}>Đóng</button>
             </div>
           </div>

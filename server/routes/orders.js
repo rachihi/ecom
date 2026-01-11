@@ -109,6 +109,7 @@ router.get("/me", customerAuthMiddleware, ordersController.getOrdersByCustomer);
 
 router.post("/create-order", ordersController.postCreateOrder);
 router.post("/update-order", ordersController.postUpdateOrder);
+router.put("/cancel-order", customerAuthMiddleware, ordersController.putCancelOrder);
 router.post("/delete-order", ordersController.postDeleteOrder);
 
 module.exports = router;
