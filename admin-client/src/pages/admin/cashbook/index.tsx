@@ -56,13 +56,7 @@ export default function CashbookPage() {
   };
 
   // Combine filters into single state to prevent double fetch
-  const [filter, setFilter] = useState<{ from: string; to: string }>(() => {
-    const d = new Date();
-    return {
-      from: formatDate(new Date(d.getFullYear(), d.getMonth(), 1)),
-      to: formatDate(new Date(d.getFullYear(), d.getMonth() + 1, 0))
-    };
-  });
+  const [filter, setFilter] = useState<{ from: string; to: string }>({ from: '', to: '' });
 
   const [q, setQ] = useState('');
   const debouncedQ = useDebounce(q, 500);
